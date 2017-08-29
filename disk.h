@@ -1,7 +1,8 @@
 #ifndef DISK_H
 #define DISK_H
 #include <stdio.h>
-
+#include <string.h>
+#include <stdlib.h>
 /*  Aqui se van a definir las estructuras necesarias para escribir en el archivo binario
  *  para la clase se usaran unicamente dos estructuras con fines demostrativos
  *  la primera almacenara los datos del estudiante y la cantidad de bloques:
@@ -24,7 +25,7 @@ typedef struct bitmap{
 }BM;
 
 
-void crear_disco(char * nombre_disco, int tamano_disco, char * nombre_estudiante, char * carne, int bloques,char * ruta_disco){
+void crear_disco(char* nombre_disco, int tamano_disco, char* nombre_estudiante, char* carne, int bloques,char* ruta_disco){
     char comando[500];
 
     /*  Para crear un disco con contenido se usara el comando dd de la terminal de linux
@@ -88,7 +89,7 @@ void crear_disco(char * nombre_disco, int tamano_disco, char * nombre_estudiante
     fseek(escritor, 0, SEEK_SET);
     // Llenamos de informacion la estructura de alumno
     strcpy(alumno.nombre, nombre_estudiante);
-    alumno.carne = carne;
+    alumno.carne = (int)carne;
     alumno.bloques = bloques;
     /* Una vez lleno lo escribimos en el archivo con la funcion fwrite
      * Parametros de fwrite:
@@ -110,7 +111,7 @@ void crear_disco(char * nombre_disco, int tamano_disco, char * nombre_estudiante
     fclose(escritor);
 }
 
-void mostrar_disco(char* nombre_disco){
+void mostrar_disco(char* nombre_disco, char* ruta_disco){
     char pathaux[150];
     memset(&pathaux[0], 0, sizeof(pathaux));
     strcat(pathaux, ruta_disco);
@@ -143,7 +144,7 @@ void mostrar_disco(char* nombre_disco){
     fclose(escritor);
 }
 
-void ingresar_bloques(char* nombre_disco, int cantidad){
+void ingresar_bloques(char* nombre_disco, int cantidad , char* ruta_disco){
     // Ingresar bloques usando el primer ajuste
     int bloques_disco = 0;
     char pathaux[150];
@@ -187,7 +188,7 @@ void ingresar_bloques(char* nombre_disco, int cantidad){
     fclose(escritor);
 }
 
-void borrar_bloques(char* nombre_disco, int inicio, int cantidad){
+void borrar_bloques(char* nombre_disco, int inicio, int cantidad,char* ruta_disco){
     char pathaux[150];
     memset(&pathaux[0], 0, sizeof(pathaux));
     strcat(pathaux, ruta_disco);

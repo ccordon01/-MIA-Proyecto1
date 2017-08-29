@@ -25,7 +25,8 @@ int main()
     char nombre_disco[MAX_DISCO];
     char nombre_alumno[MAX_NOMBRE];
     char rutaDisco[MAX_RUTA];
-    int carne, bloques, inicio, tamano_disco = 0;
+    char carne[MAX_NOMBRE];
+    int bloques, inicio, tamano_disco = 0;
 
     while (opcion != 5){
         printf(" ============================================================================= \n");
@@ -57,7 +58,7 @@ int main()
             // %limite[regex]
             scanf("%s", nombre_alumno);
             printf(" Ingrese el carne: ");
-            scanf("%d", &carne);
+            scanf("%s", &carne);
             printf(" Ingrese la cantidad de bloques: ");
             scanf("%d", &bloques);
             crear_disco(nombre_disco, tamano_disco, nombre_alumno, carne, bloques, rutaDisco);
@@ -70,9 +71,11 @@ int main()
             printf(" ============================================================================= \n");
             printf(" Ingrese el nombre del disco: ");
             scanf("%s", &nombre_disco);
+            printf(" Ingrese al ruta del disco: ");
+            scanf("%s", &rutaDisco);
             printf(" Ingrese la cantidad de bloques: ");
             scanf("%d", &bloques);
-            ingresar_bloques(nombre_disco, bloques);
+            ingresar_bloques(nombre_disco, bloques,rutaDisco);
             break;
 
         case 3:
@@ -86,7 +89,9 @@ int main()
             scanf("%d", &inicio);
             printf(" Ingrese la cantidad de bloques: ");
             scanf("%d", &bloques);
-            borrar_bloques(nombre_disco, inicio, bloques);
+            printf(" Ingrese al ruta del disco: ");
+            scanf("%s", &rutaDisco);
+            borrar_bloques(nombre_disco, inicio, bloques, rutaDisco);
             break;
 
         case 4:
@@ -97,7 +102,9 @@ int main()
             printf(" ============================================================================= \n");
             printf(" Ingrese el nombre del disco: ");
             scanf("%s", &nombre_disco);
-            mostrar_disco(nombre_disco);
+            printf(" Ingrese al ruta del disco: ");
+            scanf("%s", &rutaDisco);
+            mostrar_disco(nombre_disco,rutaDisco);
             break;
         }
 
