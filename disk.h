@@ -111,10 +111,10 @@ void crear_disco(char* nombre_disco, int tamano_disco,int carne,char* ruta_disco
     fwrite(&superBloque,sizeof(SB),1,escritor);
     //free(superBloque);
     fseek(escritor, 0, SEEK_SET);
-    SB test;
-    fread(&test,sizeof(SB),1,escritor);
-    printf(" Fecha de cracion: %s  \n",test.mount_time);
-    printf(" Creado por: %d \n",test.numero_magico);
+    SB info;
+    fread(&info,sizeof(SB),1,escritor);
+    printf(" Fecha de cracion: %s  \n",info.mount_time);
+    printf(" Creado por: %d \n",info.numero_magico);
     //JOURNALING
     J journal;
     strcat(journal.descripsion,"Ejemplo");
@@ -139,6 +139,31 @@ void crear_disco(char* nombre_disco, int tamano_disco,int carne,char* ruta_disco
     BA bloqa;
     for (int var = 0; var < (numero_estructuras*54); ++var) {
         fwrite(&bloqa,sizeof(BA),1,escritor);
+    }
+
+    //Creacion de la carpeta root ("/")
+
+    //Inodo Root
+    I rootI;
+    rootI.id=info.free_inodo;
+    time_t tiempo = time(0);
+    struct tm *tlocal = localtime(&tiempo);
+    strftime(rootI.fecha,128,"%d/%m/%y %H:%M:%S",tlocal);
+    rootI.bloques_asign=0;
+    rootI.tam=0;
+    rootI.tipo_dato=0;
+    for (int var = 0; var < 4; ++var) {
+       rootI.bloque_dir[var]=-1;
+    }
+    rootI.bloque_ind1=-1;
+    rootI.bloque_ind2=-1;
+
+    //Bloque Carpeta Root
+    BC bloqueRoot;
+    strcat(bloqueRoot.padre,"0");
+    strcat(bloqueRoot.nombre,"/");
+    for (int var = 0; var < 6; ++var) {
+       bloqueRoot.hijo[var]=-1;
     }
     //printf("%d",numero_estructuras);
     /*  fseek pone el puntero en la posicion que le indicamos en el segundo parametro

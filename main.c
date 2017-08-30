@@ -83,7 +83,7 @@ void MenuPrincipal(){
             system("clear");
             if (!isEmpty(rutaDisco,"")) {
                 printf(" ============================================================================= \n");
-                printf("                                Ingresar bloques \n");
+                printf("                                Montar Disco \n");
                 printf(" ============================================================================= \n");
                 printf(" Ingrese el nombre del disco: ");
                 scanf("%s", &nombre_disco);

@@ -32,11 +32,9 @@ typedef struct inodos{
     int id;
     char fecha[128];
     int tam;
+    int bloques_asign;
     int tipo_dato;
-    int bloque_dir1;
-    int bloque_dir2;
-    int bloque_dir3;
-    int bloque_dir4;
+    int bloque_dir[4];
     int bloque_ind1;
     int bloque_ind2;
     int user;
