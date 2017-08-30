@@ -79,7 +79,7 @@ void crear_disco(char* nombre_disco, int tamano_disco,int carne,char* ruta_disco
     strcat(pathaux, ".dsk");
     FILE* escritor = fopen(pathaux, "rb+");
     free(pathaux);
-    double n = (double)((double)(((tamano_disco-5)*1024))-sizeof(SB))/(4005 + 3*sizeof(J) + sizeof(I));
+    double n = (double)((double)(((tamano_disco-5)*1024))-sizeof(SB))/((54*sizeof(BA)) + 3*sizeof(J) + sizeof(I));
     int numero_estructuras = floor(n);
     printf("\nReporte de Creacion de Disco \n");
     printf(" Cantidad inodos: %d \n",numero_estructuras);
@@ -98,6 +98,15 @@ void crear_disco(char* nombre_disco, int tamano_disco,int carne,char* ruta_disco
     superBloque.free_bloque = 0;
     superBloque.free_inodo = 0;
     superBloque.free_journal = 0;
+    //Apuntador Journal
+    superBloque.journal = sizeof(SB);
+    //Apuntadores Bitmap
+    superBloque.bitmap_inodos = superBloque.journal + (3*numero_estructuras*sizeof(J));
+    superBloque.bitmap_bloques = superBloque.bitmap_inodos + numero_estructuras;
+    //Apuntadores
+    superBloque.inodos = superBloque.bitmap_bloques + (numero_estructuras*54);
+    superBloque.bloques = superBloque.inodos + (numero_estructuras*(sizeof(I)));
+    //SUPERBLOQUE
     fseek(escritor, 0, SEEK_SET);
     fwrite(&superBloque,sizeof(SB),1,escritor);
     //free(superBloque);
@@ -106,6 +115,31 @@ void crear_disco(char* nombre_disco, int tamano_disco,int carne,char* ruta_disco
     fread(&test,sizeof(SB),1,escritor);
     printf(" Fecha de cracion: %s  \n",test.mount_time);
     printf(" Creado por: %d \n",test.numero_magico);
+    //JOURNALING
+    J journal;
+    strcat(journal.descripsion,"Ejemplo");
+    for (int var = 0; var < (3*numero_estructuras); ++var) {
+        fwrite(&journal,sizeof(J),1,escritor);
+    }
+    //BITMAP DE INODOS
+    BM bitm;
+    for (int var = 0; var < numero_estructuras; ++var) {
+        fwrite(&bitm,sizeof(BM),1,escritor);
+    }
+    //BITMAP DE BLOQUES
+    for (int var = 0; var < (numero_estructuras*54); ++var) {
+        fwrite(&bitm,sizeof(BM),1,escritor);
+    }
+    //INODOS
+    I in;
+    for (int var = 0; var < numero_estructuras; ++var) {
+        fwrite(&in,sizeof(I),1,escritor);
+    }
+    //BLOQUES
+    BA bloqa;
+    for (int var = 0; var < (numero_estructuras*54); ++var) {
+        fwrite(&bloqa,sizeof(BA),1,escritor);
+    }
     //printf("%d",numero_estructuras);
     /*  fseek pone el puntero en la posicion que le indicamos en el segundo parametro
      *  primer parametro se manda la variable de tipo FILE*, segundo la posicion dentro del archivo
@@ -234,5 +268,22 @@ void borrar_bloques(char* nombre_disco, int inicio, int cantidad,char* ruta_disc
         fwrite(&bm, sizeof(BM), 1, escritor);
     }
     fclose(escritor);
+}
+
+int montar_disco(char* nombre_disco,char* ruta_disco){
+    FILE *f1;
+    char* pathaux=(char*)malloc(150);
+    memset(&pathaux[0], 0, sizeof(pathaux));
+    strcat(pathaux, ruta_disco);
+    strcat(pathaux, "/");
+    strcat(pathaux, nombre_disco);
+    strcat(pathaux, ".dsk");
+    f1 = fopen (pathaux, "rb");
+    free(pathaux);
+    if (f1 == NULL)
+    {
+       return 0;
+    }
+    return 1;
 }
 #endif // DISK_H

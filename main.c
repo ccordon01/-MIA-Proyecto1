@@ -46,7 +46,7 @@ void MenuPrincipal(){
         printf("                                Menu principal \n");
         printf(" ============================================================================= \n");
         printf(" 1. Crear disco \n");
-        printf(" 2. Ingresar bloques (primer ajuste) \n");
+        printf(" 2. Montar Disco \n");
         printf(" 3. Eliminar bloques \n");
         printf(" 4. Mostrar disco \n");
         printf(" 5. Salir \n");
@@ -58,34 +58,47 @@ void MenuPrincipal(){
         case 1:
             // Seccion para crear el disco
             system("clear");
-            printf(" ============================================================================= \n");
-            printf("                                 Crear disco \n");
-            printf(" ============================================================================= \n");
-            printf(" Ingrese el nombre del disco: ");
-            scanf("%s", &nombre_disco);
-            printf(" Ingrese el tamano del disco (en MB): ");
-            scanf("%d", &tamano_disco);
-            printf(" Ingrese al ruta del disco: ");
-            scanf("%s", &rutaDisco);
-            /*printf(" Ingrese el nombre del alumno: ");
-            // %limite[regex]
-            scanf("%s", nombre_alumno);*/
-            printf(" Ingrese el registro academico: ");
-            scanf("%d", &carne);
-            /*printf(" Ingrese la cantidad de bloques: ");
-            scanf("%d", &bloques);*/
-            crear_disco(nombre_disco, tamano_disco, carne, rutaDisco);
+            if (!isEmpty(rutaDisco,"")) {
+                printf(" ============================================================================= \n");
+                printf("                                 Crear disco \n");
+                printf(" ============================================================================= \n");
+                printf(" Ingrese el nombre del disco: ");
+                scanf("%s", &nombre_disco);
+                printf(" Ingrese el tamano del disco (en MB): ");
+                scanf("%d", &tamano_disco);
+                printf(" Ingrese al ruta del disco: ");
+                scanf("%s", &rutaDisco);
+                /*printf(" Ingrese el nombre del alumno: ");
+                // %limite[regex]
+                scanf("%s", nombre_alumno);*/
+                printf(" Ingrese el registro academico: ");
+                scanf("%d", &carne);
+                /*printf(" Ingrese la cantidad de bloques: ");
+                scanf("%d", &bloques);*/
+                crear_disco(nombre_disco, tamano_disco, carne, rutaDisco);
+            }
             break;
 
         case 2:
             system("clear");
-            printf(" ============================================================================= \n");
-            printf("                                Ingresar bloques \n");
-            printf(" ============================================================================= \n");
-            printf(" Ingrese el nombre del disco: ");
-            scanf("%s", &nombre_disco);
-            printf(" Ingrese al ruta del disco: ");
-            scanf("%s", &rutaDisco);
+            if (!isEmpty(rutaDisco,"")) {
+                printf(" ============================================================================= \n");
+                printf("                                Ingresar bloques \n");
+                printf(" ============================================================================= \n");
+                printf(" Ingrese el nombre del disco: ");
+                scanf("%s", &nombre_disco);
+                printf(" Ingrese al ruta del disco: ");
+                scanf("%s", &rutaDisco);
+                if (montar_disco(nombre_disco,rutaDisco)) {
+                    printf("El disco se monto correctamente! \n");
+                }else{
+                    memset(&rutaDisco,0,sizeof(rutaDisco));
+                    memset(&nombre_disco,0,sizeof(nombre_disco));
+                    perror("Error al montar el disco verificar que la ruta este correcta \n");
+                }
+            }else{
+                printf("Ya existe un disco montado!");
+            }
             /*printf(" Ingrese la cantidad de bloques: ");
             scanf("%d", &bloques);*/
             //ingresar_bloques(nombre_disco, bloques,rutaDisco);
@@ -125,7 +138,7 @@ void MenuPrincipal(){
 
 int isEmpty(char * cadena,char * aviso){
     if(cadena[0]=='\0'){
-
+        strcat(aviso,"\n");
         printf(aviso);
         return 0;
     }
