@@ -25,9 +25,8 @@ typedef struct bitmap{
 }BM;
 
 
-void crear_disco(char* nombre_disco, int tamano_disco, char* nombre_estudiante, char* carne, int bloques,char* ruta_disco){
+void crear_disco(char* nombre_disco, int tamano_disco,int carne,char* ruta_disco){
     char comando[500];
-
     /*  Para crear un disco con contenido se usara el comando dd de la terminal de linux
      *  $ dd
      *  seguido de la especificacion de llenar de ceros el archivo
@@ -57,8 +56,8 @@ void crear_disco(char* nombre_disco, int tamano_disco, char* nombre_estudiante, 
     system(comando); // ejecuta el comando en la terminal del SO
 
     // Una vez creado el archivo lo abrimos para poder ingresar las estructuras
-    DATOS alumno;
-    BM bm;
+    /*DATOS alumno;
+    BM bm;*/
 
     /*  Para abrir el archivo usamos la funcion fopen que recibe como primer parametro la ruta y segundo
      *  el modo, se pueden usar los siguientes:
@@ -86,11 +85,11 @@ void crear_disco(char* nombre_disco, int tamano_disco, char* nombre_estudiante, 
      *  parametro. Por ejemplo: fseek(escritor, -1*sizeof(DATOS), SEEK_CUR);
      *  Acontinuacion solo nos situamos al inicio del archivo para escribir los datos
       */
-    fseek(escritor, 0, SEEK_SET);
+    //fseek(escritor, 0, SEEK_SET);
     // Llenamos de informacion la estructura de alumno
-    strcpy(alumno.nombre, nombre_estudiante);
+    /*strcpy(alumno.nombre, nombre_estudiante);
     alumno.carne = (int)carne;
-    alumno.bloques = bloques;
+    alumno.bloques = bloques;*/
     /* Una vez lleno lo escribimos en el archivo con la funcion fwrite
      * Parametros de fwrite:
      * 1. Puntero a la direccion de memoria donde se encuentran los datos a escribir
@@ -98,14 +97,14 @@ void crear_disco(char* nombre_disco, int tamano_disco, char* nombre_estudiante, 
      * 3. CANTIDAD de registros a escribir
      * 4. FILE abierto previamente
      */
-    fwrite(&alumno, sizeof(DATOS), 1, escritor);
+    //fwrite(&alumno, sizeof(DATOS), 1, escritor);
 
     // Escribimos el bitmap con la cantidad de bloques que el usuario ingreso
-    bm.estado = '0';
+    /*bm.estado = '0';
     int i = 0;
     for (i = 0; i < bloques; i++){
         fwrite(&bm, sizeof(BM), 1, escritor);
-    }
+    }*/
 
     // Cerramos el archivo con fclose
     fclose(escritor);
