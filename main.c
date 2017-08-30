@@ -1,5 +1,7 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <locale.h>
+#include <math.h>
 #include "disk.h"
 #include "estructurasdisk.h"
 #define MAX_DISCO 20
@@ -7,12 +9,14 @@
 #define MAX_RUTA 50
 
 // Variables globales
-
 char nombre_disco[MAX_DISCO];
 char rutaDisco[MAX_RUTA];
+//char* nombre_disco;
+//char* rutaDisco;
 int main()
 {
-    isEmpty(nombre_disco,"El nombre del disco esta vacio");
+    //nombre_disco = (char*)malloc(MAX_DISCO);
+    //rutaDisco = (char*)malloc((MAX_RUTA));
     /*SB super1;
     printf("%d \n", sizeof(super1));
     J jour;
@@ -67,7 +71,7 @@ void MenuPrincipal(){
             // %limite[regex]
             scanf("%s", nombre_alumno);*/
             printf(" Ingrese el registro academico: ");
-            scanf("%s", &carne);
+            scanf("%d", &carne);
             /*printf(" Ingrese la cantidad de bloques: ");
             scanf("%d", &bloques);*/
             crear_disco(nombre_disco, tamano_disco, carne, rutaDisco);
@@ -121,6 +125,7 @@ void MenuPrincipal(){
 
 int isEmpty(char * cadena,char * aviso){
     if(cadena[0]=='\0'){
+
         printf(aviso);
         return 0;
     }
