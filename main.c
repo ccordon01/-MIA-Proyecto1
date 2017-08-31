@@ -47,8 +47,8 @@ void MenuPrincipal(){
         printf(" ============================================================================= \n");
         printf(" 1. Crear disco \n");
         printf(" 2. Montar Disco \n");
-        printf(" 3. Eliminar bloques \n");
-        printf(" 4. Mostrar disco \n");
+        printf(" 3. Estado bloques e inodos \n");
+        printf(" 4. Desmontar disco \n");
         printf(" 5. Salir \n");
         printf(" -----------------------------------------------------------------------------\n");
         printf("Ingrese una opcion: ");
@@ -76,6 +76,8 @@ void MenuPrincipal(){
                 /*printf(" Ingrese la cantidad de bloques: ");
                 scanf("%d", &bloques);*/
                 crear_disco(nombre_disco, tamano_disco, carne, rutaDisco);
+            }else{
+                printf(" Existe un disco montado!");
             }
             break;
 
@@ -90,14 +92,14 @@ void MenuPrincipal(){
                 printf(" Ingrese al ruta del disco: ");
                 scanf("%s", &rutaDisco);
                 if (montar_disco(nombre_disco,rutaDisco)) {
-                    printf("El disco se monto correctamente! \n");
+                    printf(" El disco se monto correctamente! \n");
                 }else{
                     memset(&rutaDisco,0,sizeof(rutaDisco));
                     memset(&nombre_disco,0,sizeof(nombre_disco));
-                    perror("Error al montar el disco verificar que la ruta este correcta \n");
+                    perror(" Error al montar el disco verificar que la ruta este correcta \n");
                 }
             }else{
-                printf("Ya existe un disco montado!");
+                printf(" Ya existe un disco montado!");
             }
             /*printf(" Ingrese la cantidad de bloques: ");
             scanf("%d", &bloques);*/
@@ -106,31 +108,34 @@ void MenuPrincipal(){
 
         case 3:
             system("clear");
-            printf(" ============================================================================= \n");
-            printf("                                Eliminar bloques \n");
-            printf(" ============================================================================= \n");
-            printf(" Ingrese el nombre del disco: ");
-            scanf("%s", &nombre_disco);
-            printf(" Ingrese el inicio: ");
-            scanf("%d", &inicio);
-            printf(" Ingrese la cantidad de bloques: ");
-            //scanf("%d", &bloques);
-            printf(" Ingrese al ruta del disco: ");
-            scanf("%s", &rutaDisco);
-            //borrar_bloques(nombre_disco, inicio, bloques, rutaDisco);
+            if (!isEmpty(rutaDisco,"")) {
+                perror(" No existe ningun disco montando!");
+            }else{
+                printf(" ============================================================================= \n");
+                printf("                              Estado De Los BitMap \n");
+                printf(" ============================================================================= \n\n");
+                estado_bloques(nombre_disco,rutaDisco);
+                estado_inodos(nombre_disco,rutaDisco);
+            }
             break;
 
         case 4:
             // Mostrar el disco
             system("clear");
+            char op[MAX_RUTA];
             printf(" ============================================================================= \n");
-            printf("                                 Mostrar disco \n");
+            printf("                               Desmontar disco \n");
             printf(" ============================================================================= \n");
-            printf(" Ingrese el nombre del disco: ");
-            scanf("%s", &nombre_disco);
-            printf(" Ingrese al ruta del disco: ");
-            scanf("%s", &rutaDisco);
-            mostrar_disco(nombre_disco,rutaDisco);
+            printf(" Desea desmontar el disco: %s",nombre_disco);
+            printf(" Ingrese \"S\" para confirmar.");
+            scanf("%s", &op);
+            if (strcmp(op, "S") == 0) {
+                memset(&rutaDisco,0,sizeof(rutaDisco));
+                memset(&nombre_disco,0,sizeof(nombre_disco));
+                printf(" El disco fue desmontado correctamente!");
+            } else {
+                printf(" El disco continuara funcionando en el sistema!");
+            }
             break;
         }
     }
@@ -138,7 +143,7 @@ void MenuPrincipal(){
 
 int isEmpty(char * cadena,char * aviso){
     if(cadena[0]=='\0'){
-        strcat(aviso,"\n");
+        //strcat(aviso,"\n");
         printf(aviso);
         return 0;
     }

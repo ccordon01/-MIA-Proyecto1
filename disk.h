@@ -95,6 +95,7 @@ void crear_disco(char* nombre_disco, int tamano_disco,int carne,char* ruta_disco
     time_t tiempo = time(0);
     struct tm *tlocal = localtime(&tiempo);
     strftime(superBloque.mount_time,128,"%d/%m/%y %H:%M:%S",tlocal);
+    //Siguiente libre
     superBloque.free_bloque = 0;
     superBloque.free_inodo = 0;
     superBloque.free_journal = 0;
@@ -115,21 +116,35 @@ void crear_disco(char* nombre_disco, int tamano_disco,int carne,char* ruta_disco
     fread(&info,sizeof(SB),1,escritor);
     printf(" Fecha de cracion: %s  \n",info.mount_time);
     printf(" Creado por: %d \n",info.numero_magico);
+    /*printf(" journal: %d \n",info.journal);
+    printf(" bitmap_inodos: %d \n",info.bitmap_inodos);
+    printf(" bitmap_bloques: %d \n",info.bitmap_bloques);
+    printf(" inodos: %d \n",info.inodos);
+    printf(" bloques: %d \n\n",info.bloques);*/
     //JOURNALING
+    fseek(escritor, info.journal, SEEK_SET);
+    int contador=info.journal;
     J journal;
-    strcat(journal.descripsion,"Ejemplo");
+    //strcat(journal.descripsion,"Ejemplo");
     for (int var = 0; var < (3*numero_estructuras); ++var) {
         fwrite(&journal,sizeof(J),1,escritor);
+        contador+=sizeof(J);
     }
+    //printf(" journal: %d \n",contador);
     //BITMAP DE INODOS
     BM bitm;
+    bitm.estado='0';
     for (int var = 0; var < numero_estructuras; ++var) {
         fwrite(&bitm,sizeof(BM),1,escritor);
+        contador+=sizeof(BM);
     }
+    //printf(" bitmap_inodos: %d \n",contador);
     //BITMAP DE BLOQUES
     for (int var = 0; var < (numero_estructuras*54); ++var) {
         fwrite(&bitm,sizeof(BM),1,escritor);
+        contador+=sizeof(BM);
     }
+    //printf(" bitmap_bloques: %d \n",contador);
     //INODOS
     I in;
     for (int var = 0; var < numero_estructuras; ++var) {
@@ -141,14 +156,14 @@ void crear_disco(char* nombre_disco, int tamano_disco,int carne,char* ruta_disco
         fwrite(&bloqa,sizeof(BA),1,escritor);
     }
 
-    //Creacion de la carpeta root ("/")
 
+    //Creacion de la carpeta root ("/")
     //Inodo Root
     I rootI;
     rootI.id=info.free_inodo;
-    time_t tiempo = time(0);
-    struct tm *tlocal = localtime(&tiempo);
-    strftime(rootI.fecha,128,"%d/%m/%y %H:%M:%S",tlocal);
+    time_t tiempo1 = time(0);
+    struct tm *tlocal1 = localtime(&tiempo1);
+    strftime(rootI.fecha,128,"%d/%m/%y %H:%M:%S",tlocal1);
     rootI.bloques_asign=0;
     rootI.tam=0;
     rootI.tipo_dato=0;
@@ -165,6 +180,33 @@ void crear_disco(char* nombre_disco, int tamano_disco,int carne,char* ruta_disco
     for (int var = 0; var < 6; ++var) {
        bloqueRoot.hijo[var]=-1;
     }
+    rootI.bloque_dir[0]=0;
+    BM rootBM;
+    rootBM.estado='1';
+    //Actualizar Bitmap
+    fseek(escritor, info.bitmap_inodos, SEEK_SET);
+    fwrite(&rootBM,sizeof(BM),1,escritor);
+    fseek(escritor, info.bitmap_bloques, SEEK_SET);
+    fwrite(&rootBM,sizeof(BM),1,escritor);
+    //Agregar inodo y bloque
+    fseek(escritor,info.inodos,SEEK_SET);
+    fwrite(&rootI,sizeof(I),1,escritor);
+
+    fseek(escritor,info.bloques,SEEK_SET);
+    fwrite(&bloqueRoot,sizeof(BC),1,escritor);
+
+    //Journal
+    J infoRoot;
+    strftime(infoRoot.fecha,128,"%d/%m/%y %H:%M:%S",tlocal1);
+    strcat(infoRoot.descripsion,"Creacion de la carpeta root (\"/\")");
+    fseek(escritor,info.journal,SEEK_SET);
+    fwrite(&infoRoot,sizeof(J),1,escritor);
+    //Actualizar SuperBloque
+    info.free_bloque=1;
+    info.free_inodo = 1;
+    info.free_journal=1;
+    fseek(escritor, 0, SEEK_SET);
+    fwrite(&info,sizeof(SB),1,escritor);
     //printf("%d",numero_estructuras);
     /*  fseek pone el puntero en la posicion que le indicamos en el segundo parametro
      *  primer parametro se manda la variable de tipo FILE*, segundo la posicion dentro del archivo
@@ -304,11 +346,93 @@ int montar_disco(char* nombre_disco,char* ruta_disco){
     strcat(pathaux, nombre_disco);
     strcat(pathaux, ".dsk");
     f1 = fopen (pathaux, "rb");
-    free(pathaux);
     if (f1 == NULL)
     {
        return 0;
     }
+    FILE* escritor = fopen(pathaux, "rb+");
+    free(pathaux);
+    fseek(escritor, 0, SEEK_SET);
+    SB info;
+    fread(&info,sizeof(SB),1,escritor);
+    printf(" Ultima fecha que se monto el disco: %s  \n",info.mount_time);
+    time_t tiempo1 = time(0);
+    struct tm *tlocal1 = localtime(&tiempo1);
+    strftime(info.mount_time,128,"%d/%m/%y %H:%M:%S",tlocal1);
+    printf(" Fecha actual: %s  \n",info.mount_time);
+    fseek(escritor, 0, SEEK_SET);
+    fwrite(&info,sizeof(SB),1,escritor);
+    fclose(escritor);
     return 1;
+}
+
+void estado_bloques(char* nombre_disco,char* ruta_disco){
+    char* pathaux=(char*)malloc(150);
+    memset(&pathaux[0], 0, sizeof(pathaux));
+    strcat(pathaux, ruta_disco);
+    strcat(pathaux, "/");
+    strcat(pathaux, nombre_disco);
+    strcat(pathaux, ".dsk");
+    FILE* escritor = fopen(pathaux, "rb+");
+    free(pathaux);
+    fseek(escritor, 0, SEEK_SET);
+    SB info;
+    BM bm;
+    fread(&info,sizeof(SB),1,escritor);
+    fseek(escritor, info.bitmap_bloques, SEEK_SET);
+    // Leemos con un ciclo el bitmap
+    printf("                                Bitmap De Bloques\n");
+    int i = 0;
+    printf("            ");
+    for (i = 0; i < (info.numero_bloques+ 10 - (info.numero_bloques%10)); i++){
+        if(i%10 == 0){
+            printf("\n");
+            printf("              ");
+        }
+        if(i < info.numero_bloques){
+        fread(&bm, sizeof(BM), 1, escritor);
+        printf("| %c |", bm.estado);
+        }
+        else {
+        printf("| - |");
+        }
+    }
+    printf("\n \n\ n");
+
+}
+
+void estado_inodos(char* nombre_disco,char* ruta_disco){
+    char* pathaux=(char*)malloc(150);
+    memset(&pathaux[0], 0, sizeof(pathaux));
+    strcat(pathaux, ruta_disco);
+    strcat(pathaux, "/");
+    strcat(pathaux, nombre_disco);
+    strcat(pathaux, ".dsk");
+    FILE* escritor = fopen(pathaux, "rb+");
+    free(pathaux);
+    fseek(escritor, 0, SEEK_SET);
+    SB info;
+    BM bm;
+    fread(&info,sizeof(SB),1,escritor);
+    fseek(escritor, info.bitmap_inodos, SEEK_SET);
+    // Leemos con un ciclo el bitmap
+    printf("                                Bitmap De Inodos\n");
+    int i = 0;
+    printf("              ");
+    for (i = 0; i < (info.numero_inodos+ 10 - (info.numero_inodos%10)); i++){
+        if(i%10 == 0){
+            printf("\n");
+            printf("            ");
+        }
+        if(i < info.numero_inodos){
+        fread(&bm, sizeof(BM), 1, escritor);
+        printf("| %c |", bm.estado);
+        }
+        else {
+        printf("| - |");
+        }
+    }
+    printf("\n");
+
 }
 #endif // DISK_H
