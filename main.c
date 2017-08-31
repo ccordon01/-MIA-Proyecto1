@@ -41,7 +41,7 @@ int main()
 void MenuPrincipal(){
     int opcion = 0;
     int carne, inicio, tamano_disco = 0;
-    while (opcion != 5){
+    while (opcion != 8){
         printf(" ============================================================================= \n");
         printf("                                Menu principal \n");
         printf(" ============================================================================= \n");
@@ -49,7 +49,8 @@ void MenuPrincipal(){
         printf(" 2. Montar Disco \n");
         printf(" 3. Estado bloques e inodos \n");
         printf(" 4. Desmontar disco \n");
-        printf(" 5. Salir \n");
+        printf(" 5. Bitacora \n");
+        printf(" 8. Salir \n");
         printf(" -----------------------------------------------------------------------------\n");
         printf("Ingrese una opcion: ");
         scanf("%d", &opcion);
@@ -135,6 +136,18 @@ void MenuPrincipal(){
                 printf(" El disco fue desmontado correctamente!");
             } else {
                 printf(" El disco continuara funcionando en el sistema!");
+            }
+            break;
+        case 5:
+            // Mostrar el disco
+            system("clear");
+            if (!isEmpty(rutaDisco,"")) {
+                perror(" No existe ningun disco montando!");
+            }else{
+                printf(" ============================================================================= \n");
+                printf("                                Bitacora \n");
+                printf(" ============================================================================= \n\n");
+                bitacora(nombre_disco,rutaDisco);
             }
             break;
         }

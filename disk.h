@@ -93,6 +93,7 @@ void crear_disco(char* nombre_disco, int tamano_disco,int carne,char* ruta_disco
     superBloque.bloques_free = (numero_estructuras*52);
     superBloque.inodos_free = numero_estructuras;
     time_t tiempo = time(0);
+    memset(&superBloque.mount_time,0,sizeof(superBloque.mount_time));
     struct tm *tlocal = localtime(&tiempo);
     strftime(superBloque.mount_time,128,"%d/%m/%y %H:%M:%S",tlocal);
     //Siguiente libre
@@ -125,7 +126,8 @@ void crear_disco(char* nombre_disco, int tamano_disco,int carne,char* ruta_disco
     fseek(escritor, info.journal, SEEK_SET);
     int contador=info.journal;
     J journal;
-    //strcat(journal.descripsion,"Ejemplo");
+    memset(&journal.descripsion,0,sizeof(journal.descripsion));
+    strcat(journal.descripsion,"-");
     for (int var = 0; var < (3*numero_estructuras); ++var) {
         fwrite(&journal,sizeof(J),1,escritor);
         contador+=sizeof(J);
@@ -163,6 +165,7 @@ void crear_disco(char* nombre_disco, int tamano_disco,int carne,char* ruta_disco
     rootI.id=info.free_inodo;
     time_t tiempo1 = time(0);
     struct tm *tlocal1 = localtime(&tiempo1);
+    memset(&rootI.fecha,0,sizeof(rootI.fecha));
     strftime(rootI.fecha,128,"%d/%m/%y %H:%M:%S",tlocal1);
     rootI.bloques_asign=0;
     rootI.tam=0;
@@ -175,6 +178,8 @@ void crear_disco(char* nombre_disco, int tamano_disco,int carne,char* ruta_disco
 
     //Bloque Carpeta Root
     BC bloqueRoot;
+    memset(&bloqueRoot.padre,0,sizeof(bloqueRoot.padre));
+    memset(&bloqueRoot.nombre,0,sizeof(bloqueRoot.nombre));
     strcat(bloqueRoot.padre,"0");
     strcat(bloqueRoot.nombre,"/");
     for (int var = 0; var < 6; ++var) {
@@ -197,7 +202,9 @@ void crear_disco(char* nombre_disco, int tamano_disco,int carne,char* ruta_disco
 
     //Journal
     J infoRoot;
+    memset(&infoRoot.fecha,0,sizeof(infoRoot.fecha));
     strftime(infoRoot.fecha,128,"%d/%m/%y %H:%M:%S",tlocal1);
+    memset(&infoRoot.descripsion,0,sizeof(infoRoot.descripsion));
     strcat(infoRoot.descripsion,"Creacion de la carpeta root (\"/\")");
     fseek(escritor,info.journal,SEEK_SET);
     fwrite(&infoRoot,sizeof(J),1,escritor);
@@ -397,8 +404,8 @@ void estado_bloques(char* nombre_disco,char* ruta_disco){
         printf("| - |");
         }
     }
-    printf("\n \n\ n");
-
+    printf("\n \n\ \n");
+    fclose(escritor);
 }
 
 void estado_inodos(char* nombre_disco,char* ruta_disco){
@@ -422,7 +429,7 @@ void estado_inodos(char* nombre_disco,char* ruta_disco){
     for (i = 0; i < (info.numero_inodos+ 10 - (info.numero_inodos%10)); i++){
         if(i%10 == 0){
             printf("\n");
-            printf("            ");
+            printf("              ");
         }
         if(i < info.numero_inodos){
         fread(&bm, sizeof(BM), 1, escritor);
@@ -433,6 +440,33 @@ void estado_inodos(char* nombre_disco,char* ruta_disco){
         }
     }
     printf("\n");
+    fclose(escritor);
+}
 
+void bitacora(char* nombre_disco,char* ruta_disco){
+    char* pathaux=(char*)malloc(150);
+    memset(&pathaux[0], 0, sizeof(pathaux));
+    strcat(pathaux, ruta_disco);
+    strcat(pathaux, "/");
+    strcat(pathaux, nombre_disco);
+    strcat(pathaux, ".dsk");
+    FILE* escritor = fopen(pathaux, "rb+");
+    free(pathaux);
+    fseek(escritor, 0, SEEK_SET);
+    SB info;
+    fread(&info,sizeof(SB),1,escritor);
+    J journalReporte;
+    fseek(escritor, info.journal, SEEK_SET);
+    printf("   Fecha             | Descripcion \n");
+    for (int var = 0; var < (info.numero_inodos*3); ++var) {
+        fread(&journalReporte, sizeof(J), 1, escritor);
+        if (strcmp(journalReporte.descripsion, "-") == 0) {
+            break;
+        } else {
+            printf("   %s |",journalReporte.fecha);
+            printf(" %s \n",journalReporte.descripsion);
+        }
+    }
+    fclose(escritor);
 }
 #endif // DISK_H
