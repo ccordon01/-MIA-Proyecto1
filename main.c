@@ -15,6 +15,15 @@ char rutaDisco[MAX_RUTA];
 //char* rutaDisco;
 int main()
 {
+    char cadena[]="MrBlood.split.crea.funcion";
+        int i;
+        char **retorno=split(cadena, '.');
+        for(i=0;retorno[i]!=NULL;i++)
+        {
+            printf("%s\n", retorno[i]);
+            free(retorno[i]);
+        }
+        free(retorno);
     //nombre_disco = (char*)malloc(MAX_DISCO);
     //rutaDisco = (char*)malloc((MAX_RUTA));
     /*SB super1;
@@ -40,8 +49,8 @@ int main()
 
 void MenuPrincipal(){
     int opcion = 0;
-    int carne, inicio, tamano_disco = 0;
-    while (opcion != 8){
+    int carne,tamano_disco = 0;
+    while (opcion != 6){
         printf(" ============================================================================= \n");
         printf("                                Menu principal \n");
         printf(" ============================================================================= \n");
@@ -50,7 +59,7 @@ void MenuPrincipal(){
         printf(" 3. Estado bloques e inodos \n");
         printf(" 4. Desmontar disco \n");
         printf(" 5. Bitacora \n");
-        printf(" 8. Salir \n");
+        printf(" 6. Salir \n");
         printf(" -----------------------------------------------------------------------------\n");
         printf("Ingrese una opcion: ");
         scanf("%d", &opcion);
