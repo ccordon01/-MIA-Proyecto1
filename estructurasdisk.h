@@ -20,7 +20,7 @@ typedef struct superbloque{
   int free_bloque;
   //int free_bloqueind;
   int journal;
-  int free_journal;
+  //int free_journal;
 }SB;
 
 typedef struct journaling{
@@ -71,4 +71,9 @@ typedef struct bloquesIndirectos{
     int extra[12];
 }BI;
 
+
+//Funciones
+struct superbloque crear_inodo(I nuevo,char* nombre_disco,char* ruta_disco,SB info);
+struct superbloque crear_bloqueC(BC nuevo,char* nombre_disco,char* ruta_disco,SB info);
+struct superbloque crear_bloqueA(BA nuevo,char* nombre_disco,char* ruta_disco,SB info);
 #endif // ESTRUCTURASDISK_H

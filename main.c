@@ -15,15 +15,15 @@ char rutaDisco[MAX_RUTA];
 //char* rutaDisco;
 int main()
 {
-    char cadena[]="MrBlood.split.crea.funcion";
+    /*char cadena[]="1, G,root\n1,U,root,root,201504427\n";
         int i;
-        char **retorno=split(cadena, '.');
+        char **retorno=split(cadena, '\n');
         for(i=0;retorno[i]!=NULL;i++)
         {
             printf("%s\n", retorno[i]);
             free(retorno[i]);
         }
-        free(retorno);
+        free(retorno);*/
     //nombre_disco = (char*)malloc(MAX_DISCO);
     //rutaDisco = (char*)malloc((MAX_RUTA));
     /*SB super1;
@@ -40,9 +40,9 @@ int main()
     printf("%d \n", sizeof(bi));
     BM bm;
     printf("%d \n", sizeof(bm));*/
-    setlocale(LC_ALL, "spanish");
     //char nombre_alumno[MAX_NOMBRE];
     //char carne[MAX_NOMBRE];
+    setlocale(LC_ALL, "spanish");
     MenuPrincipal();
     return 0;
 }
@@ -50,7 +50,7 @@ int main()
 void MenuPrincipal(){
     int opcion = 0;
     int carne,tamano_disco = 0;
-    while (opcion != 6){
+    while (opcion != 7){
         printf(" ============================================================================= \n");
         printf("                                Menu principal \n");
         printf(" ============================================================================= \n");
@@ -59,7 +59,8 @@ void MenuPrincipal(){
         printf(" 3. Estado bloques e inodos \n");
         printf(" 4. Desmontar disco \n");
         printf(" 5. Bitacora \n");
-        printf(" 6. Salir \n");
+        printf(" 6. Visor De Archivos \n");
+        printf(" 7. Salir \n");
         printf(" -----------------------------------------------------------------------------\n");
         printf("Ingrese una opcion: ");
         scanf("%d", &opcion);
@@ -109,7 +110,7 @@ void MenuPrincipal(){
                     perror(" Error al montar el disco verificar que la ruta este correcta \n");
                 }
             }else{
-                printf(" Ya existe un disco montado!");
+                printf(" Ya existe un disco montado!\n");
             }
             /*printf(" Ingrese la cantidad de bloques: ");
             scanf("%d", &bloques);*/
@@ -119,7 +120,7 @@ void MenuPrincipal(){
         case 3:
             system("clear");
             if (!isEmpty(rutaDisco,"")) {
-                perror(" No existe ningun disco montando!");
+                perror(" No existe ningun disco montando!\n");
             }else{
                 printf(" ============================================================================= \n");
                 printf("                              Estado De Los BitMap \n");
@@ -137,21 +138,21 @@ void MenuPrincipal(){
             printf("                               Desmontar disco \n");
             printf(" ============================================================================= \n");
             printf(" Desea desmontar el disco: %s",nombre_disco);
-            printf(" Ingrese \"S\" para confirmar.");
+            printf("\n Ingrese \"S\" para confirmar.");
             scanf("%s", &op);
             if (strcmp(op, "S") == 0) {
                 memset(&rutaDisco,0,sizeof(rutaDisco));
                 memset(&nombre_disco,0,sizeof(nombre_disco));
-                printf(" El disco fue desmontado correctamente!");
+                printf(" El disco fue desmontado correctamente!\n");
             } else {
-                printf(" El disco continuara funcionando en el sistema!");
+                printf(" El disco continuara funcionando en el sistema!\n");
             }
             break;
         case 5:
             // Mostrar el disco
             system("clear");
             if (!isEmpty(rutaDisco,"")) {
-                perror(" No existe ningun disco montando!");
+                perror(" No existe ningun disco montando!\n");
             }else{
                 printf(" ============================================================================= \n");
                 printf("                                Bitacora \n");
