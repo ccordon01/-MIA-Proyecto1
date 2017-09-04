@@ -62,12 +62,7 @@ typedef struct bloquesCarpetas{
 
 typedef struct bloquesIndirectos{
     int nivel;
-    int apuntador1;
-    int apuntador2;
-    int apuntador3;
-    int apuntador4;
-    int apuntador5;
-    int apuntador6;
+    int apuntador[6];
     int extra[12];
 }BI;
 
@@ -76,4 +71,5 @@ typedef struct bloquesIndirectos{
 struct superbloque crear_inodo(I nuevo,char* nombre_disco,char* ruta_disco,SB info);
 struct superbloque crear_bloqueC(BC nuevo,char* nombre_disco,char* ruta_disco,SB info);
 struct superbloque crear_bloqueA(BA nuevo,char* nombre_disco,char* ruta_disco,SB info);
+struct superbloque crear_bloqueI(BI nuevo,char* nombre_disco,char* ruta_disco,SB info);
 #endif // ESTRUCTURASDISK_H
