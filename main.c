@@ -50,19 +50,22 @@ int main()
 void MenuPrincipal(){
     int opcion = 0;
     int carne,tamano_disco = 0;
-    while (opcion != 9){
+    while (opcion != 12){
         printf(" ============================================================================= \n");
         printf("                                Menu principal \n");
         printf(" ============================================================================= \n");
-        printf(" 1. Crear disco \n");
-        printf(" 2. Montar Disco \n");
-        printf(" 3. Estado bloques e inodos \n");
-        printf(" 4. Desmontar disco \n");
-        printf(" 5. Bitacora \n");
-        printf(" 6. Visor De Archivos \n");
-        printf(" 7. Crear Carpeta \n");
-        printf(" 8. Crear Archivo \n");
-        printf(" 9. Salir \n");
+        printf("  1. Crear disco \n");
+        printf("  2. Montar Disco \n");
+        printf("  3. Estado bloques e inodos \n");
+        printf("  4. Desmontar disco \n");
+        printf("  5. Bitacora \n");
+        printf("  6. Visor De Archivos \n");
+        printf("  7. Crear Carpeta \n");
+        printf("  8. Crear Archivo \n");
+        printf("  9. Eliminar Carpeta \n");
+        printf(" 10. Eliminar Archivo \n");
+        printf(" 11. Visor De Carpeta \n");
+        printf(" 12. Salir \n");
         printf(" -----------------------------------------------------------------------------\n");
         printf("Ingrese una opcion: ");
         scanf("%d", &opcion);
@@ -182,13 +185,13 @@ void MenuPrincipal(){
                         //int i;
                 char **retorno=split(subbuff, '/');
                 crear_carpeta(nombre_disco,rutaDisco,path,retorno,nombreC);
+                free(retorno);
                 printf(" Carpeta creada correctamente!\n");
                         /*for(i=0;retorno[i]!=NULL;i++)
                         {
                             printf("%s\n", retorno[i]);
                             free(retorno[i]);
                         }*/
-                        free(retorno);
             }else{
                 printf(" No existe ningun disco montando!\n");
             }
@@ -234,6 +237,42 @@ void MenuPrincipal(){
             scanf("%d", &bloques);*/
             //ingresar_bloques(nombre_disco, bloques,rutaDisco);
             break;
+        case 11:
+            system("clear");
+            //char nombreC[25];
+            //char path[100];
+            //char cont[96];
+            memset(&nombreC,0,sizeof(nombreC));
+            memset(&path,0,sizeof(path));
+            if (isEmpty(rutaDisco,"")) {
+                printf(" ============================================================================= \n");
+                printf("                              Visor Carpeta \n");
+                printf(" ============================================================================= \n");
+                printf(" Ingrese la ruta donde se creara el archivo: ");
+                scanf("%s", &path);
+                printf("\n Contenido de %s: \n",nombreC);
+                char subbuff[strlen(path)];
+                memcpy( subbuff, &path[1], strlen(path)-1);
+                subbuff[strlen(path)-1] = '\0';
+                        //int i;
+                char **retorno=split(subbuff, '/');
+                visor_carpeta(nombre_disco,rutaDisco,path,retorno);
+                free(retorno);
+                printf(" \n");
+                printf(" \n");
+                printf(" \n");
+                        /*for(i=0;retorno[i]!=NULL;i++)
+                        {
+                            printf("%s\n", retorno[i]);
+                            free(retorno[i]);
+                        }*/
+            }else{
+                printf(" No existe ningun disco montando!\n");
+            }
+            /*printf(" Ingrese la cantidad de bloques: ");
+            scanf("%d", &bloques);*/
+            //ingresar_bloques(nombre_disco, bloques,rutaDisco);
+            break;
         case 8:
             system("clear");
             //char nombreC[25];
@@ -251,6 +290,7 @@ void MenuPrincipal(){
                 printf(" Ingrese la ruta donde se creara el archivo: ");
                 scanf("%s", &path);
                 printf(" Ingrese el contenido del archivo: ");
+
                 scanf("%s", &cont);
                 char subbuff[strlen(path)];
                 memcpy( subbuff, &path[1], strlen(path)-1);
