@@ -25,4 +25,5 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 HEADERS += \
     disk.h \
-    estructurasdisk.h
+    estructurasdisk.h \
+    split.h

@@ -1,5 +1,6 @@
 #ifndef DISK_H
 #define DISK_H
+#include "split.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -541,7 +542,7 @@ void crear_archivo(char* nombre_disco,char* ruta_disco,char* path,char **pathE,c
             /*//Actualizar superbloque
             fseek(escritor, 0, SEEK_SET);
             fread(&info,sizeof(SB),1,escritor);*/
-            escritor = fopen(pathaux, "rb+");
+            //escritor = fopen(pathaux, "rb+");
             //Llenar conenido en bloques directos
             int tamArchivo = archivoNuevo.tam;
             int lectorPos=0;
@@ -627,7 +628,7 @@ void crear_archivo(char* nombre_disco,char* ruta_disco,char* path,char **pathE,c
         /*//Actualizar superbloque
         fseek(escritor, 0, SEEK_SET);
         fread(&info,sizeof(SB),1,escritor);*/
-        escritor = fopen(pathaux, "rb+");
+        //escritor = fopen(pathaux, "rb+");
         //Llenar conenido en bloques directos
         int tamArchivo = archivoNuevo.tam;
         int lectorPos=0;
@@ -679,9 +680,9 @@ void crear_archivo(char* nombre_disco,char* ruta_disco,char* path,char **pathE,c
     fclose(escritor);
     char* descrip=(char*)malloc(140);
     memset(&descrip[0], 0, sizeof(descrip));
-    strcat(descrip, "Se creo el archivo ");
+    strcat(descrip, "Se creo el archivo \"");
     strcat(descrip, nombre_archivo);
-    strcat(descrip, " en ");
+    strcat(descrip, "\" en ");
     strcat(descrip, path);
     bitacoraReporte(descrip,nombre_disco,ruta_disco);
     free(descrip);
@@ -872,9 +873,9 @@ void crear_carpeta(char* nombre_disco,char* ruta_disco,char* path,char **pathE,c
     fclose(escritor);
     char* descrip=(char*)malloc(140);
     memset(&descrip[0], 0, sizeof(descrip));
-    strcat(descrip, "Se creo la carpeta ");
+    strcat(descrip, "Se creo la carpeta \"");
     strcat(descrip, nombre_archivo);
-    strcat(descrip, " en ");
+    strcat(descrip, "\" en ");
     strcat(descrip, path);
     bitacoraReporte(descrip,nombre_disco,ruta_disco);
     free(descrip);
@@ -1113,6 +1114,202 @@ void visor_carpeta(char* nombre_disco,char* ruta_disco,char* path,char **pathE){
     fclose(escritor);
 }
 
+void eliminar(char* nombre_disco,char* ruta_disco,char* path,char **pathE){
+    int inoAr[48];
+    int contino=-1;
+    int bloAr[48];
+    int contblo=-1;
+    char* descrip=(char*)malloc(140);
+    memset(&descrip[0], 0, sizeof(descrip));
+    char* pathaux=(char*)malloc(150);
+    memset(&pathaux[0], 0, sizeof(pathaux));
+    strcat(pathaux, ruta_disco);
+    strcat(pathaux, "/");
+    strcat(pathaux, nombre_disco);
+    strcat(pathaux, ".dsk");
+    FILE* escritor = fopen(pathaux, "rb+");
+    SB info;
+    fseek(escritor, 0, SEEK_SET);
+    fread(&info,sizeof(SB),1,escritor);
+    I root;
+    fseek(escritor,info.inodos,SEEK_SET);
+    fread(&root,sizeof(I),1,escritor);
+    I aux;
+    int auxn;
+    int nInodo=0;
+    int nBloque=0;
+    if (strcmp(path, "/") == 0) {
+        //Declarar en la raiz
+        printf(" No se puede eliminar el directorio \n");
+    } else {
+        //En otros lados vergas
+        //escritor = fopen(pathaux, "rb+");
+        int i;
+        for(i=0;pathE[i]!=NULL;i++)
+        {
+            I tempIn;
+            fseek(escritor,info.inodos+(nInodo*sizeof(I)),SEEK_SET);
+            fread(&tempIn,sizeof(I),1,escritor);
+            //Revisar bloques directos
+            for (int var = 0; var < 4; ++var) {
+                if (tempIn.bloque_dir[var]!=-1) {
+                    BC bloqueCarpeta;
+                    fseek(escritor,info.bloques+(tempIn.bloque_dir[var]*sizeof(BC)),SEEK_SET);
+                    fread(&bloqueCarpeta,sizeof(BC),1,escritor);
+                    if (strcmp(pathE[i],bloqueCarpeta.nombre)==0) {
+                        auxn = nInodo;
+                        nInodo=bloqueCarpeta.hijo[0];
+                        nBloque=tempIn.bloque_dir[var];
+                        aux = tempIn;
+                        aux.bloque_dir[var]=-1;
+                    }
+                }
+            }
+            //printf("%s\n", pathE[i]);
+            //free(pathE[i]);
+        }
+        //free(pathE);
+        if (nInodo!=0) {
+            I padreC;
+            fseek(escritor,info.inodos+(nInodo*sizeof(I)),SEEK_SET);
+            fread(&padreC,sizeof(I),1,escritor);
+            fclose(escritor);
+            if (padreC.tipo_dato==1) {
+                for (int var = 0; var < 4; ++var) {
+                    if (padreC.bloque_dir[var]!=-1) {
+                        escritor = fopen(pathaux, "rb+");
+                        BC bloqueCarpeta;
+                        fseek(escritor,info.bloques+(padreC.bloque_dir[var]*sizeof(BC)),SEEK_SET);
+                        fread(&bloqueCarpeta,sizeof(BC),1,escritor);
+                        char pathA[100];
+                        memset(&pathA,0,sizeof(pathA));
+                        strcat(pathA,path);
+                        strcat(pathA,"/");
+                        strcat(pathA,bloqueCarpeta.nombre);
+                        char subbuff[strlen(path)];
+                        memcpy( subbuff, &pathA[1], strlen(pathA)-1);
+                        subbuff[strlen(pathA)-1] = '\0';
+                        char **retorno=split(subbuff, '/');
+                        fclose(escritor);
+                        contino++;
+                        inoAr[contino]=bloqueCarpeta.hijo[0];
+                        contblo++;
+                        bloAr[contblo]=padreC.bloque_dir[var];
+                        eliminar(nombre_disco,ruta_disco,pathA,retorno);
+                        /*escritor = fopen(pathaux, "rb+");
+                        BM elim;
+                        elim.estado='0';
+                        fseek(escritor, info.bitmap_inodos+(sizeof(BM)*bloqueCarpeta.hijo[0]), SEEK_SET);
+                        fwrite(&elim,sizeof(BM),1,escritor);
+                        fseek(escritor, info.bitmap_bloques+(sizeof(BM)*padreC.bloque_dir[var]), SEEK_SET);
+                        fwrite(&elim,sizeof(BM),1,escritor);
+                        fclose(escritor);
+                        info=eliminar_inodo(bloqueCarpeta.hijo[0],nombre_disco,ruta_disco,info);
+                        info=eliminar_bloque(padreC.bloque_dir[var],nombre_disco,ruta_disco,info);*/
+                        free(retorno);
+                    }
+                }
+                if (padreC.bloque_ind1!=-1) {
+                    escritor = fopen(pathaux, "rb+");
+                    BI bloqueNivel1;
+                    fseek(escritor,info.bloques+(sizeof(BI)*padreC.bloque_ind1),SEEK_SET);
+                    fread(&bloqueNivel1,sizeof(BI),1,escritor);
+                    fclose(escritor);
+                    for (int var = 0; var < 6; ++var) {
+                        if (bloqueNivel1.apuntador[var]!=-1) {
+                            escritor = fopen(pathaux, "rb+");
+                            BC bloqueCarpeta;
+                            fseek(escritor,info.bloques+(bloqueNivel1.apuntador[var]*sizeof(BC)),SEEK_SET);
+                            fread(&bloqueCarpeta,sizeof(BC),1,escritor);
+                            char pathA[100];
+                            memset(&pathA,0,sizeof(pathA));
+                            strcat(pathA,path);
+                            strcat(pathA,"/");
+                            strcat(pathA,bloqueCarpeta.nombre);
+                            char subbuff[strlen(path)];
+                            memcpy( subbuff, &pathA[1], strlen(pathA)-1);
+                            subbuff[strlen(pathA)-1] = '\0';
+                            char **retorno=split(subbuff, '/');
+                            fclose(escritor);
+                            contino++;
+                            inoAr[contino]=bloqueCarpeta.hijo[0];
+                            contblo++;
+                            bloAr[contblo]=bloqueNivel1.apuntador[var];
+                            eliminar(nombre_disco,ruta_disco,pathA,retorno);
+                            /*escritor = fopen(pathaux, "rb+");
+                            BM elim;
+                            elim.estado='0';
+                            fseek(escritor, info.bitmap_inodos+(sizeof(BM)*bloqueCarpeta.hijo[0]), SEEK_SET);
+                            fwrite(&elim,sizeof(BM),1,escritor);
+                            fseek(escritor, info.bitmap_bloques+(sizeof(BM)*bloqueNivel1.apuntador[var]), SEEK_SET);
+                            fwrite(&elim,sizeof(BM),1,escritor);
+                            fclose(escritor);
+                            info=eliminar_inodo(bloqueCarpeta.hijo[0],nombre_disco,ruta_disco,info);
+                            info=eliminar_bloque(bloqueNivel1.apuntador[var],nombre_disco,ruta_disco,info);*/
+                            free(retorno);
+                        }
+                    }
+                }
+                printf("   Se elimino la carpeta %s\n",path);
+                strcat(descrip, "Se elimino la carpeta \"");
+                strcat(descrip, path);
+                strcat(descrip,"\"");
+            }
+            else{
+                printf("   Se elimino el archivo %s\n",path);
+                strcat(descrip, "Se elimino el archivo \"");
+                strcat(descrip, path);
+                strcat(descrip,"\"");
+            }
+            /*escritor = fopen(pathaux, "rb+");
+            BM elim;
+            elim.estado='0';
+            //Actualizar Bitmap
+            fseek(escritor, info.bitmap_inodos+(sizeof(BM)*nInodo), SEEK_SET);
+            fwrite(&elim,sizeof(BM),1,escritor);
+            fseek(escritor, info.bitmap_bloques+(sizeof(BM)*nBloque), SEEK_SET);
+            fwrite(&elim,sizeof(BM),1,escritor);
+            fclose(escritor);
+            info=eliminar_inodo(nInodo,nombre_disco,ruta_disco,info);
+            info=eliminar_bloque(nBloque,nombre_disco,ruta_disco,info);*/
+        }
+        else{
+        close(escritor);
+        }
+    }
+    /*for (int var = 0; var < 48; ++var) {
+        if (inoAr[var]!=0) {
+            printf(" Inodo: %d\n",inoAr[var]);
+            info=eliminar_inodo(inoAr[var],nombre_disco,ruta_disco,info);
+        }
+        else{
+            break;
+        }
+    }*/
+    /*for (int var = 0; var < 48; ++var) {
+        if (bloAr[var]!=0) {
+            printf(" Bloque: %d\n",bloAr[var]);
+            info=eliminar_bloque(bloAr[var],nombre_disco,ruta_disco,info);
+        }
+        else{
+            break;
+        }
+    }*/
+    escritor = fopen(pathaux, "rb+");
+    info=eliminar_inodo(nInodo,nombre_disco,ruta_disco,info);
+    info=eliminar_bloque(nBloque,nombre_disco,ruta_disco,info);
+    fseek(escritor,info.inodos,SEEK_SET);
+    fwrite(&root,sizeof(I),1,escritor);
+    fseek(escritor,info.inodos+(auxn*sizeof(I)),SEEK_SET);
+    fwrite(&aux,sizeof(I),1,escritor);
+    fseek(escritor, 0, SEEK_SET);
+    fwrite(&info,sizeof(SB),1,escritor);
+    free(pathaux);
+    fclose(escritor);
+    bitacoraReporte(descrip,nombre_disco,ruta_disco);
+    free(descrip);
+}
+
 void bitacoraReporte(char* descrip,char* nombre_disco,char* ruta_disco){
     char* pathaux=(char*)malloc(150);
     memset(&pathaux[0], 0, sizeof(pathaux));
@@ -1276,6 +1473,72 @@ struct superbloque crear_bloqueI(BI nuevo,char* nombre_disco,char* ruta_disco,SB
     return info;
 }
 
+struct superbloque eliminar_inodo(int pos,char* nombre_disco,char* ruta_disco,SB info){
+    char* pathaux=(char*)malloc(150);
+    memset(&pathaux[0], 0, sizeof(pathaux));
+    strcat(pathaux, ruta_disco);
+    strcat(pathaux, "/");
+    strcat(pathaux, nombre_disco);
+    strcat(pathaux, ".dsk");
+    FILE* escritor = fopen(pathaux, "rb+");
+    /*fseek(escritor, 0, SEEK_SET);
+    SB info;
+    fread(&info,sizeof(SB),1,escritor);*/
+    BM rootBM;
+    rootBM.estado='0';
+    //Actualizar Bitmap
+    fseek(escritor, info.bitmap_inodos+(sizeof(BM)*pos), SEEK_SET);
+    fwrite(&rootBM,sizeof(BM),1,escritor);
+    /*BM estadoE;
+    fseek(escritor, info.bitmap_inodos+(sizeof(BM)*pos), SEEK_SET);
+    fread(&estadoE,sizeof(BM),1,escritor);
+    printf("Inodo: %d Bitmap recien borrado: %c \n",pos,estadoE.estado);*/
+    fclose(escritor);
+    //Actualizar el siguiente inodo libre
+    info.free_inodo=next_inodo(nombre_disco,ruta_disco);
+    info.inodos_free++;
+    /*//Actualizar superbloque
+    escritor = fopen(pathaux, "rb+");
+    fseek(escritor, 0, SEEK_SET);
+    fread(&info,sizeof(SB),1,escritor);*/
+    free(pathaux);
+    //fclose(escritor);
+    return info;
+}
+
+struct superbloque eliminar_bloque(int pos,char* nombre_disco,char* ruta_disco,SB info){
+    char* pathaux=(char*)malloc(150);
+    memset(&pathaux[0], 0, sizeof(pathaux));
+    strcat(pathaux, ruta_disco);
+    strcat(pathaux, "/");
+    strcat(pathaux, nombre_disco);
+    strcat(pathaux, ".dsk");
+    FILE* escritor = fopen(pathaux, "rb+");
+    /*fseek(escritor, 0, SEEK_SET);
+    SB info;
+    fread(&info,sizeof(SB),1,escritor);*/
+    BM rootBM;
+    rootBM.estado='0';
+    //Actualizar Bitmap
+    fseek(escritor, info.bitmap_bloques+(sizeof(BM)*pos), SEEK_SET);
+    fwrite(&rootBM,sizeof(BM),1,escritor);
+    /*BM estadoE;
+    fseek(escritor, info.bitmap_bloques+(sizeof(BM)*pos), SEEK_SET);
+    fread(&estadoE,sizeof(BM),1,escritor);
+    printf("Bloque: %d  Bitmap recien borrado: %c\n",pos,estadoE.estado);*/
+    fclose(escritor);
+    //Actualizar el siguiente inodo libre
+    info.free_bloque=next_bloque(nombre_disco,ruta_disco);
+    info.bloques_free++;
+    //Actualizar superbloque
+    /*escritor = fopen(pathaux, "rb+");
+    fseek(escritor, 0, SEEK_SET);
+    fread(&info,sizeof(SB),1,escritor);*/
+    free(pathaux);
+    //fclose(escritor);
+    return info;
+}
+
 int next_inodo(char* nombre_disco,char* ruta_disco){
     char* pathaux=(char*)malloc(150);
     memset(&pathaux[0], 0, sizeof(pathaux));
@@ -1332,47 +1595,4 @@ int next_bloque(char* nombre_disco,char* ruta_disco){
     fclose(escritor);
 }
 
-int len_palabra(char *cadena, int inicio, char separador)
-{
-    int len=0, i=inicio;
-    while(cadena[i]!=separador&&cadena[i]!='\0')
-    {
-        len++;
-        i++;
-    }
-    return len;
-}
-
-char **split(char *cadena, char separador)
-{
-    int num_palabras=1, len_cadena=strlen(cadena), i, j=1, *inicios;
-    for(i=0;i<len_cadena;i++)
-    {
-        if(cadena[i]==separador)
-        {
-            num_palabras++;
-        }
-    }
-    inicios=malloc(sizeof(int)*num_palabras);
-    inicios[0]=0;
-    for(i=1;i<len_cadena;i++)
-    {
-        if(cadena[i]==separador)
-        {
-            inicios[j]=i+1;
-            j++;
-        }
-    }
-    char **retorno=malloc(sizeof(char *)*num_palabras+1);
-    retorno[num_palabras]=NULL;
-    for(i=0;i<num_palabras;i++)
-    {
-        j=len_palabra(cadena, inicios[i], separador);
-        retorno[i]=(char *)malloc(sizeof(char)*j);
-        strncpy(retorno[i], &cadena[inicios[i]], j);
-        retorno[i][j]='\0';
-    }
-    free(inicios);
-    return retorno;
-}
 #endif // DISK_H

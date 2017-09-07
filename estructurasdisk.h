@@ -72,4 +72,6 @@ struct superbloque crear_inodo(I nuevo,char* nombre_disco,char* ruta_disco,SB in
 struct superbloque crear_bloqueC(BC nuevo,char* nombre_disco,char* ruta_disco,SB info);
 struct superbloque crear_bloqueA(BA nuevo,char* nombre_disco,char* ruta_disco,SB info);
 struct superbloque crear_bloqueI(BI nuevo,char* nombre_disco,char* ruta_disco,SB info);
+struct superbloque eliminar_inodo(int pos,char* nombre_disco,char* ruta_disco,SB info);
+struct superbloque eliminar_bloque(int pos,char* nombre_disco,char* ruta_disco,SB info);
 #endif // ESTRUCTURASDISK_H
