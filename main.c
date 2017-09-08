@@ -52,7 +52,7 @@ void MenuPrincipal(){
     fflush(stdin);
     int opcion = 0;
     int carne,tamano_disco = 0;
-    while (opcion != 11){
+    while (opcion != 12){
         printf(" ============================================================================= \n");
         printf("                                Menu principal \n");
         printf(" ============================================================================= \n");
@@ -66,7 +66,8 @@ void MenuPrincipal(){
         printf("  8. Crear Archivo \n");
         printf("  9. Visor De Carpeta \n");
         printf(" 10. Eliminar Archivo o Carpeta \n");
-        printf(" 11. Salir \n");
+        printf(" 11. Mover Archivo o Carpeta \n");
+        printf(" 12. Salir \n");
         printf(" -----------------------------------------------------------------------------\n");
         printf("Ingrese una opcion: ");
         scanf("%d", &opcion);
@@ -357,6 +358,52 @@ void MenuPrincipal(){
                 char **retorno=split(subbuff, '/');
                 eliminar(nombre_disco,rutaDisco,path,retorno);
                 free(retorno);
+                printf(" \n");
+                printf(" \n");
+                printf(" \n");
+                        /*for(i=0;retorno[i]!=NULL;i++)
+                        {
+                            printf("%s\n", retorno[i]);
+                            free(retorno[i]);
+                        }*/
+            }else{
+                printf(" No existe ningun disco montando!\n");
+            }
+            /*printf(" Ingrese la cantidad de bloques: ");
+            scanf("%d", &bloques);*/
+            //ingresar_bloques(nombre_disco, bloques,rutaDisco);
+            break;
+        case 11:
+            fflush(stdin);
+            system("clear");
+            //char nombreC[25];
+            char pathMove[100];
+            //char cont[96];
+            memset(&nombreC,0,sizeof(nombreC));
+            memset(&path,0,sizeof(path));
+            memset(&pathMove,0,sizeof(pathMove));
+            if (isEmpty(rutaDisco,"")) {
+                printf(" ============================================================================= \n");
+                printf("                          Mover Archivo o Carpeta \n");
+                printf(" ============================================================================= \n");
+                printf(" Ingrese la ruta donde se encuentra: ");
+                scanf("%s", &path);
+                char subbuff[strlen(path)];
+                memcpy( subbuff, &path[1], strlen(path)-1);
+                subbuff[strlen(path)-1] = '\0';
+                        //int i;
+                char **retorno=split(subbuff, '/');
+                printf(" Ingrese la ruta donde desea mover el contenido: ");
+                fflush(stdin);
+                scanf("%s", &pathMove);
+                char subbuffMove[strlen(pathMove)];
+                memcpy( subbuffMove, &pathMove[1], strlen(pathMove)-1);
+                subbuffMove[strlen(pathMove)-1] = '\0';
+                        //int i;
+                char **retornoMove=split(subbuffMove, '/');
+                mover(nombre_disco,rutaDisco,path,retorno,pathMove,retornoMove);
+                free(retorno);
+                free(retornoMove);
                 printf(" \n");
                 printf(" \n");
                 printf(" \n");
