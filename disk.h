@@ -1457,40 +1457,11 @@ void mover(char* nombre_disco,char* ruta_disco,char* path,char **pathE,char* pat
                 strcat(descrip, path);
                 strcat(descrip,"\"");
             }
-            /*escritor = fopen(pathaux, "rb+");
-            BM elim;
-            elim.estado='0';
-            //Actualizar Bitmap
-            fseek(escritor, info.bitmap_inodos+(sizeof(BM)*nInodo), SEEK_SET);
-            fwrite(&elim,sizeof(BM),1,escritor);
-            fseek(escritor, info.bitmap_bloques+(sizeof(BM)*nBloque), SEEK_SET);
-            fwrite(&elim,sizeof(BM),1,escritor);
-            fclose(escritor);
-            info=eliminar_inodo(nInodo,nombre_disco,ruta_disco,info);
-            info=eliminar_bloque(nBloque,nombre_disco,ruta_disco,info);*/
         }
         else{
         close(escritor);
         }
     }
-    /*for (int var = 0; var < 48; ++var) {
-        if (inoAr[var]!=0) {
-            printf(" Inodo: %d\n",inoAr[var]);
-            info=eliminar_inodo(inoAr[var],nombre_disco,ruta_disco,info);
-        }
-        else{
-            break;
-        }
-    }*/
-    /*for (int var = 0; var < 48; ++var) {
-        if (bloAr[var]!=0) {
-            printf(" Bloque: %d\n",bloAr[var]);
-            info=eliminar_bloque(bloAr[var],nombre_disco,ruta_disco,info);
-        }
-        else{
-            break;
-        }
-    }*/
     escritor = fopen(pathaux, "rb+");
     info=eliminar_inodo(nInodo,nombre_disco,ruta_disco,info);
     info=eliminar_bloque(nBloque,nombre_disco,ruta_disco,info);

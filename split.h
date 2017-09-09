@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <string.h>
+
 int len_palabra(char *cadena, int inicio, char separador)
 {
     int len=0, i=inicio;
