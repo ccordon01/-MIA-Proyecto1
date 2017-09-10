@@ -16,6 +16,8 @@ char rutaDisco[MAX_RUTA];
 //char* rutaDisco;
 int main()
 {
+    /*remove("hola");
+    system("nano hola");
     /*char cadena[]="Home/Carlos";
         int i;
         char **retorno=split(cadena, '/');
@@ -52,7 +54,8 @@ void MenuPrincipal(){
     fflush(stdin);
     int opcion = 0;
     int carne,tamano_disco = 0;
-    while (opcion != 12){
+    while (opcion != 13){
+        fflush(stdin);
         printf(" ============================================================================= \n");
         printf("                                Menu principal \n");
         printf(" ============================================================================= \n");
@@ -67,7 +70,8 @@ void MenuPrincipal(){
         printf("  9. Visor De Carpeta \n");
         printf(" 10. Eliminar Archivo o Carpeta \n");
         printf(" 11. Mover Archivo o Carpeta \n");
-        printf(" 12. Salir \n");
+        printf(" 12. Modificar Archivo \n");
+        printf(" 13. Salir \n");
         printf(" -----------------------------------------------------------------------------\n");
         printf("Ingrese una opcion: ");
         scanf("%d", &opcion);
@@ -400,6 +404,46 @@ void MenuPrincipal(){
                 mover(nombre_disco,rutaDisco,path,retorno,pathMove,retornoMove);
                 free(retorno);
                 free(retornoMove);
+                printf(" \n");
+                        /*for(i=0;retorno[i]!=NULL;i++)
+                        {
+                            printf("%s\n", retorno[i]);
+                            free(retorno[i]);
+                        }*/
+            }else{
+                printf(" No existe ningun disco montando!\n");
+            }
+            /*printf(" Ingrese la cantidad de bloques: ");
+            scanf("%d", &bloques);*/
+            //ingresar_bloques(nombre_disco, bloques,rutaDisco);
+            break;
+        case 12:
+            fflush(stdin);
+            system("clear");
+            //char nombreC[25];
+            //char path[100];
+            //char cont[96];
+            memset(&nombreC,0,sizeof(nombreC));
+            memset(&path,0,sizeof(path));
+            if (isEmpty(rutaDisco,"")) {
+                printf(" ============================================================================= \n");
+                printf("                              Modificar Archivos \n");
+                printf(" ============================================================================= \n");
+                printf(" Ingrese el nombre del archivo: ");
+                scanf("%s", &nombreC);
+                printf(" Ingrese la ruta donde se ubica el archivo: ");
+                fflush(stdin);
+                scanf("%s", &path);
+                printf("\n Contenido de %s: \n",nombreC);
+                char subbuff[strlen(path)];
+                memcpy( subbuff, &path[1], strlen(path)-1);
+                subbuff[strlen(path)-1] = '\0';
+                        //int i;
+                char **retorno=split(subbuff, '/');
+                modificar_archivo(nombre_disco,rutaDisco,path,retorno,nombreC);
+                free(retorno);
+                printf(" \n");
+                printf(" \n");
                 printf(" \n");
                         /*for(i=0;retorno[i]!=NULL;i++)
                         {

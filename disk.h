@@ -1598,6 +1598,164 @@ void bitacoraReporte(char* descrip,char* nombre_disco,char* ruta_disco){
     fclose(escritor);
 }
 
+void modificar_archivo(char* nombre_disco,char* ruta_disco,char* path,char **pathE,char* nombre_archivo){
+    char* comando=(char*)malloc(150);
+    char* pathaux=(char*)malloc(150);
+    char* texto=(char*)malloc(1104);
+    memset(&texto[0], 0, sizeof(texto));
+    memset(&pathaux[0], 0, sizeof(pathaux));
+    memset(&comando[0], 0, sizeof(comando));
+    strcat(pathaux, ruta_disco);
+    strcat(pathaux, "/");
+    strcat(pathaux, nombre_disco);
+    strcat(pathaux, ".dsk");
+    FILE* escritor = fopen(pathaux, "rb+");
+    SB info;
+    fseek(escritor, 0, SEEK_SET);
+    fread(&info,sizeof(SB),1,escritor);
+    I root;
+    fseek(escritor,info.inodos,SEEK_SET);
+    fread(&root,sizeof(I),1,escritor);
+    if (strcmp(path, "/") == 0) {
+        //Declarar en la raiz
+        //Revisar bloques directos
+        int nInodo=-1;
+        for (int var = 0; var < 4; ++var) {
+            if (root.bloque_dir[var]!=-1) {
+                BC bloqueCarpeta;
+                fseek(escritor,info.bloques+(root.bloque_dir[var]*sizeof(BC)),SEEK_SET);
+                fread(&bloqueCarpeta,sizeof(BC),1,escritor);
+                if (strcmp(nombre_archivo,bloqueCarpeta.nombre)==0) {
+                    nInodo=bloqueCarpeta.hijo[0];
+                    break;
+                }
+            }
+        }
+        if (nInodo==-1) {
+            printf(" El archivo no existe! \n");
+        } else {
+            I padre;
+            fseek(escritor,info.inodos+(nInodo*sizeof(I)),SEEK_SET);
+            fread(&padre,sizeof(I),1,escritor);
+            for (int var = 0; var < 4; ++var) {
+                if (padre.bloque_dir[var]!=-1) {
+                    BA temp;
+                    fseek(escritor,info.bloques+(padre.bloque_dir[var]*sizeof(BA)),SEEK_SET);
+                    fread(&temp,sizeof(BA),1,escritor);
+                    //printf("%s",temp.informacion);
+                    strcat(texto, temp.informacion);
+                }
+            }
+        }
+    } else {
+        //En otros lados vergas
+        escritor = fopen(pathaux, "rb+");
+        int nInodo=0;
+        int i;
+        for(i=0;pathE[i]!=NULL;i++)
+        {
+            I tempIn;
+            fseek(escritor,info.inodos+(nInodo*sizeof(I)),SEEK_SET);
+            fread(&tempIn,sizeof(I),1,escritor);
+            //Revisar bloques directos
+            for (int var = 0; var < 4; ++var) {
+                if (tempIn.bloque_dir[var]!=-1) {
+                    BC bloqueCarpeta;
+                    fseek(escritor,info.bloques+(tempIn.bloque_dir[var]*sizeof(BC)),SEEK_SET);
+                    fread(&bloqueCarpeta,sizeof(BC),1,escritor);
+                    if (strcmp(pathE[i],bloqueCarpeta.nombre)==0) {
+                        nInodo=bloqueCarpeta.hijo[0];
+                    }
+                }
+            }
+            //printf("%s\n", pathE[i]);
+            //free(pathE[i]);
+        }
+        //free(pathE);
+
+        I padreC;
+        fseek(escritor,info.inodos+(nInodo*sizeof(I)),SEEK_SET);
+        fread(&padreC,sizeof(I),1,escritor);
+        nInodo=0;
+        for (int var = 0; var < 4; ++var) {
+            if (padreC.bloque_dir[var]!=-1) {
+                BC bloqueCarpeta;
+                fseek(escritor,info.bloques+(padreC.bloque_dir[var]*sizeof(BC)),SEEK_SET);
+                fread(&bloqueCarpeta,sizeof(BC),1,escritor);
+                if (strcmp(nombre_archivo,bloqueCarpeta.nombre)==0) {
+                    nInodo=bloqueCarpeta.hijo[0];
+                    break;
+                }
+            }
+        }
+        if (nInodo==0) {
+            printf(" El archivo no existe! \n");
+        } else {
+            I padre;
+            fseek(escritor,info.inodos+(nInodo*sizeof(I)),SEEK_SET);
+            fread(&padre,sizeof(I),1,escritor);
+            for (int var = 0; var < 4; ++var) {
+                if (padre.bloque_dir[var]!=-1) {
+                    BA temp;
+                    fseek(escritor,info.bloques+(padre.bloque_dir[var]*sizeof(BA)),SEEK_SET);
+                    fread(&temp,sizeof(BA),1,escritor);
+                    //printf("%s",temp.informacion);
+                    strcat(texto, temp.informacion);
+                }
+            }
+        }
+        fclose(escritor);
+    }
+    //Mostrar informacion del archivo con nano
+    FILE *fp = NULL;
+    fp = fopen(nombre_archivo,"a");
+    fprintf(fp, texto);
+    fclose(fp);
+    fflush(fp);
+    //Mostrar archivo con nano
+    strcat(comando,"nano ");
+    strcat(comando,nombre_archivo);
+    system(comando);
+    free(comando);
+    //Leer buffer
+    char *source = NULL;
+    fp = fopen(nombre_archivo, "r");
+    if (fp != NULL) {
+        /* Go to the end of the file. */
+        if (fseek(fp, 0L, SEEK_END) == 0) {
+            /* Get the size of the file. */
+            long bufsize = ftell(fp);
+            if (bufsize == -1) { /* Error */ }
+
+            /* Allocate our buffer to that size. */
+            source = malloc(sizeof(char) * (bufsize + 1));
+
+            /* Go back to the start of the file. */
+            if (fseek(fp, 0L, SEEK_SET) != 0) { /* Error */ }
+
+            /* Read the entire file into memory. */
+            size_t newLen = fread(source, sizeof(char), bufsize, fp);
+            if ( ferror( fp ) != 0 ) {
+                fputs("Error reading file", stderr);
+            } else {
+                source[newLen++] = '\0'; /* Just to be safe. */
+            }
+        }
+        fclose(fp);
+    }
+    printf("%s \n",texto);
+    free(source);
+    //Eliminar archivo
+    remove(nombre_archivo);
+    escritor = fopen(pathaux, "rb+");
+    fseek(escritor,info.inodos,SEEK_SET);
+    fwrite(&root,sizeof(I),1,escritor);
+    fseek(escritor, 0, SEEK_SET);
+    fwrite(&info,sizeof(SB),1,escritor);
+    free(pathaux);
+    fclose(escritor);
+}
+
 struct superbloque crear_inodo(I nuevo,char* nombre_disco,char* ruta_disco,SB info){
     char* pathaux=(char*)malloc(150);
     memset(&pathaux[0], 0, sizeof(pathaux));
