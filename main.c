@@ -323,7 +323,7 @@ void MenuPrincipal(){
                 subbuff[strlen(path)-1] = '\0';
                         //int i;
                 char **retorno=split(subbuff, '/');
-                crear_archivo(nombre_disco,rutaDisco,path,retorno,name,nombreC);
+                crear_archivo(nombre_disco,rutaDisco,path,retorno,name,nombreC,1);
                 free(retorno);
                 free (name);
                         /*for(i=0;retorno[i]!=NULL;i++)
@@ -358,7 +358,7 @@ void MenuPrincipal(){
                 subbuff[strlen(path)-1] = '\0';
                         //int i;
                 char **retorno=split(subbuff, '/');
-                eliminar(nombre_disco,rutaDisco,path,retorno);
+                eliminar(nombre_disco,rutaDisco,path,retorno,1);
                 free(retorno);
                 printf(" \n");
                         /*for(i=0;retorno[i]!=NULL;i++)
@@ -435,14 +435,15 @@ void MenuPrincipal(){
                 fflush(stdin);
                 scanf("%s", &path);
                 printf("\n Contenido de %s: \n",nombreC);
+                printf(" \n");
                 char subbuff[strlen(path)];
                 memcpy( subbuff, &path[1], strlen(path)-1);
                 subbuff[strlen(path)-1] = '\0';
                         //int i;
                 char **retorno=split(subbuff, '/');
                 modificar_archivo(nombre_disco,rutaDisco,path,retorno,nombreC);
+                visor_archivo(nombre_disco,rutaDisco,path,retorno,nombreC);
                 free(retorno);
-                printf(" \n");
                 printf(" \n");
                 printf(" \n");
                         /*for(i=0;retorno[i]!=NULL;i++)

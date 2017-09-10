@@ -220,7 +220,7 @@ void crear_disco(char* nombre_disco, int tamano_disco,int carne,char* ruta_disco
     fclose(escritor);
     //Crear archivo user.txt
     char **vacio;
-    crear_archivo(nombre_disco,ruta_disco,"/",vacio,"1, G,root\n1,U,root,root,201504427\n","users.txt");
+    crear_archivo(nombre_disco,ruta_disco,"/",vacio,"1,G,root\n1,U,root,root,201504427\n","users.txt",1);
 
     //printf("%d",numero_estructuras);
     /*  fseek pone el puntero en la posicion que le indicamos en el segundo parametro
@@ -254,6 +254,7 @@ void crear_disco(char* nombre_disco, int tamano_disco,int carne,char* ruta_disco
     //free(tamano_disco);
 }
 
+/*
 void mostrar_disco(char* nombre_disco, char* ruta_disco){
     char pathaux[150];
     memset(&pathaux[0], 0, sizeof(pathaux));
@@ -350,6 +351,7 @@ void borrar_bloques(char* nombre_disco, int inicio, int cantidad,char* ruta_disc
     }
     fclose(escritor);
 }
+*/
 
 int montar_disco(char* nombre_disco,char* ruta_disco){
     FILE *f1;
@@ -477,7 +479,7 @@ void bitacora(char* nombre_disco,char* ruta_disco){
     fclose(escritor);
 }
 
-void crear_archivo(char* nombre_disco,char* ruta_disco,char* path,char **pathE,char* contenido,char* nombre_archivo){
+void crear_archivo(char* nombre_disco,char* ruta_disco,char* path,char **pathE,char* contenido,char* nombre_archivo,int tipoA){
     int crear=0;
     char* pathaux=(char*)malloc(150);
     memset(&pathaux[0], 0, sizeof(pathaux));
@@ -534,6 +536,127 @@ void crear_archivo(char* nombre_disco,char* ruta_disco,char* path,char **pathE,c
         }
         if (ww==-1) {
             //Bloques indirectos
+            //Nivel 1
+            BI bloqueNivel1;
+            if (root.bloque_ind1==-1) {
+                root.bloque_ind1=info.free_bloque;
+                bloqueNivel1.nivel=1;
+                for (int var = 0; var < 6; ++var) {
+                    bloqueNivel1.apuntador[var]=-1;
+                }
+                info=crear_bloqueI(bloqueNivel1,nombre_disco,ruta_disco,info);
+                bloqueNivel1.apuntador[0]=info.free_bloque;
+                info=crear_bloqueC(bcnuevo,nombre_disco,ruta_disco,info);
+                crear=1;
+                ww=0;
+            }
+            else{
+                fseek(escritor,info.bloques+(sizeof(BI)*root.bloque_ind1),SEEK_SET);
+                fread(&bloqueNivel1,sizeof(BI),1,escritor);
+                for (int var = 0; var < 6; ++var) {
+                    if (bloqueNivel1.apuntador[var]==-1) {
+                        ww = var;
+                        break;
+                    }
+                }
+                bloqueNivel1.apuntador[ww]=info.free_bloque;
+                fclose(escritor);
+                info=crear_bloqueC(bcnuevo,nombre_disco,ruta_disco,info);
+                crear=1;
+            }
+            //Crear contenido
+            int tamArchivo = archivoNuevo.tam;
+            int lectorPos=0;
+                //Bloques Directos
+                for (int var = 0; var < 4; ++var) {
+                        if (tamArchivo<=24) {
+                            char subbuff[tamArchivo + 1];
+                            memcpy( subbuff, &contenido[lectorPos], tamArchivo);
+                            subbuff[tamArchivo] = '\0';
+                            BA bloqueContenido;
+                            memset(&bloqueContenido.padre,0,sizeof(bloqueContenido.padre));
+                            memset(&bloqueContenido.nombre,0,sizeof(bloqueContenido.nombre));
+                            memset(&bloqueContenido.informacion,0,sizeof(bloqueContenido.informacion));
+                            strcat(bloqueContenido.padre,"/");
+                            strcat(bloqueContenido.nombre,nombre_archivo);
+                            strcat(bloqueContenido.informacion,subbuff);
+                            archivoNuevo.bloque_dir[var]=info.free_bloque;
+                            info=crear_bloqueA(bloqueContenido,nombre_disco,ruta_disco,info);
+                            tamArchivo=0;
+                            break;
+                        } else {
+                            char subbuff[25];
+                            memcpy( subbuff, &contenido[lectorPos], 24);
+                            subbuff[24] = '\0';
+                            BA bloqueContenido;
+                            memset(&bloqueContenido.padre,0,sizeof(bloqueContenido.padre));
+                            memset(&bloqueContenido.nombre,0,sizeof(bloqueContenido.nombre));
+                            memset(&bloqueContenido.informacion,0,sizeof(bloqueContenido.informacion));
+                            strcat(bloqueContenido.padre,"/");
+                            strcat(bloqueContenido.nombre,nombre_archivo);
+                            strcat(bloqueContenido.informacion,subbuff);
+                            archivoNuevo.bloque_dir[var]=info.free_bloque;
+                            info=crear_bloqueA(bloqueContenido,nombre_disco,ruta_disco,info);
+                            lectorPos=lectorPos+24;
+                        }
+                    tamArchivo=tamArchivo-24;
+                }
+                if (tamArchivo>0) {
+                        //Bloques indirectos
+                        //Nivel 1
+                        BI bloqueNivel1;
+                        if (root.bloque_ind1==-1) {
+                            root.bloque_ind1=info.free_bloque;
+                            bloqueNivel1.nivel=1;
+                            for (int var = 0; var < 6; ++var) {
+                                bloqueNivel1.apuntador[var]=-1;
+                            }
+                            info=crear_bloqueI(bloqueNivel1,nombre_disco,ruta_disco,info);
+                            //bloqueNivel1.apuntador[0]=info.free_bloque;
+                            for (int var = 0; var < 6; ++var) {
+                                    if (tamArchivo<=24) {
+                                        char subbuff[tamArchivo + 1];
+                                        memcpy( subbuff, &contenido[lectorPos], tamArchivo);
+                                        subbuff[tamArchivo] = '\0';
+                                        BA bloqueContenido;
+                                        memset(&bloqueContenido.padre,0,sizeof(bloqueContenido.padre));
+                                        memset(&bloqueContenido.nombre,0,sizeof(bloqueContenido.nombre));
+                                        memset(&bloqueContenido.informacion,0,sizeof(bloqueContenido.informacion));
+                                        strcat(bloqueContenido.padre,"/");
+                                        strcat(bloqueContenido.nombre,nombre_archivo);
+                                        strcat(bloqueContenido.informacion,subbuff);
+                                        bloqueNivel1.apuntador[var]=info.free_bloque;
+                                        info=crear_bloqueA(bloqueContenido,nombre_disco,ruta_disco,info);
+                                        break;
+                                    } else {
+                                        char subbuff[25];
+                                        memcpy( subbuff, &contenido[lectorPos], 24);
+                                        subbuff[24] = '\0';
+                                        BA bloqueContenido;
+                                        memset(&bloqueContenido.padre,0,sizeof(bloqueContenido.padre));
+                                        memset(&bloqueContenido.nombre,0,sizeof(bloqueContenido.nombre));
+                                        memset(&bloqueContenido.informacion,0,sizeof(bloqueContenido.informacion));
+                                        strcat(bloqueContenido.padre,"/");
+                                        strcat(bloqueContenido.nombre,nombre_archivo);
+                                        strcat(bloqueContenido.informacion,subbuff);
+                                        bloqueNivel1.apuntador[var]=info.free_bloque;
+                                        info=crear_bloqueA(bloqueContenido,nombre_disco,ruta_disco,info);
+                                        lectorPos=lectorPos+24;
+                                    }
+                                tamArchivo=tamArchivo-24;
+                            }
+                        }
+                        //Actualizar BloqueNivel 1
+                        escritor = fopen(pathaux, "rb+");
+                        fseek(escritor,info.bloques+(sizeof(BI)*root.bloque_ind1),SEEK_SET);
+                        fwrite(&bloqueNivel1,sizeof(BI),1,escritor);
+                        fclose(escritor);
+                }
+            //Actualizar BloqueNivel 1
+            escritor = fopen(pathaux, "rb+");
+            fseek(escritor,info.bloques+(sizeof(BI)*root.bloque_ind1),SEEK_SET);
+            fwrite(&bloqueNivel1,sizeof(BI),1,escritor);
+            fclose(escritor);
         } else {
             //Asignar en bloque directo
             root.bloque_dir[ww]=info.free_bloque;
@@ -563,6 +686,7 @@ void crear_archivo(char* nombre_disco,char* ruta_disco,char* path,char **pathE,c
                             strcat(bloqueContenido.informacion,subbuff);
                             archivoNuevo.bloque_dir[var]=info.free_bloque;
                             info=crear_bloqueA(bloqueContenido,nombre_disco,ruta_disco,info);
+                            tamArchivo=0;
                             break;
                         } else {
                             char subbuff[25];
@@ -582,7 +706,55 @@ void crear_archivo(char* nombre_disco,char* ruta_disco,char* path,char **pathE,c
                     tamArchivo=tamArchivo-24;
                 }
                 if (tamArchivo>0) {
-                    //Bloques Indirectos
+                        //Bloques indirectos
+                        //Nivel 1
+                        BI bloqueNivel1;
+                        if (root.bloque_ind1==-1) {
+                            root.bloque_ind1=info.free_bloque;
+                            bloqueNivel1.nivel=1;
+                            for (int var = 0; var < 6; ++var) {
+                                bloqueNivel1.apuntador[var]=-1;
+                            }
+                            info=crear_bloqueI(bloqueNivel1,nombre_disco,ruta_disco,info);
+                            //bloqueNivel1.apuntador[0]=info.free_bloque;
+                            for (int var = 0; var < 6; ++var) {
+                                    if (tamArchivo<=24) {
+                                        char subbuff[tamArchivo + 1];
+                                        memcpy( subbuff, &contenido[lectorPos], tamArchivo);
+                                        subbuff[tamArchivo] = '\0';
+                                        BA bloqueContenido;
+                                        memset(&bloqueContenido.padre,0,sizeof(bloqueContenido.padre));
+                                        memset(&bloqueContenido.nombre,0,sizeof(bloqueContenido.nombre));
+                                        memset(&bloqueContenido.informacion,0,sizeof(bloqueContenido.informacion));
+                                        strcat(bloqueContenido.padre,"/");
+                                        strcat(bloqueContenido.nombre,nombre_archivo);
+                                        strcat(bloqueContenido.informacion,subbuff);
+                                        bloqueNivel1.apuntador[var]=info.free_bloque;
+                                        info=crear_bloqueA(bloqueContenido,nombre_disco,ruta_disco,info);
+                                        break;
+                                    } else {
+                                        char subbuff[25];
+                                        memcpy( subbuff, &contenido[lectorPos], 24);
+                                        subbuff[24] = '\0';
+                                        BA bloqueContenido;
+                                        memset(&bloqueContenido.padre,0,sizeof(bloqueContenido.padre));
+                                        memset(&bloqueContenido.nombre,0,sizeof(bloqueContenido.nombre));
+                                        memset(&bloqueContenido.informacion,0,sizeof(bloqueContenido.informacion));
+                                        strcat(bloqueContenido.padre,"/");
+                                        strcat(bloqueContenido.nombre,nombre_archivo);
+                                        strcat(bloqueContenido.informacion,subbuff);
+                                        bloqueNivel1.apuntador[var]=info.free_bloque;
+                                        info=crear_bloqueA(bloqueContenido,nombre_disco,ruta_disco,info);
+                                        lectorPos=lectorPos+24;
+                                    }
+                                tamArchivo=tamArchivo-24;
+                            }
+                        }
+                        //Actualizar BloqueNivel 1
+                        escritor = fopen(pathaux, "rb+");
+                        fseek(escritor,info.bloques+(sizeof(BI)*root.bloque_ind1),SEEK_SET);
+                        fwrite(&bloqueNivel1,sizeof(BI),1,escritor);
+                        fclose(escritor);
                 }
         }
     } else {
@@ -674,7 +846,55 @@ void crear_archivo(char* nombre_disco,char* ruta_disco,char* path,char **pathE,c
                     tamArchivo=tamArchivo-24;
                 }
                 if (tamArchivo>0) {
-                    //Bloques Indirectos
+                        //Bloques indirectos
+                        //Nivel 1
+                        BI bloqueNivel1;
+                        if (archivoNuevo.bloque_ind1==-1) {
+                            archivoNuevo.bloque_ind1=info.free_bloque;
+                            bloqueNivel1.nivel=1;
+                            for (int var = 0; var < 6; ++var) {
+                                bloqueNivel1.apuntador[var]=-1;
+                            }
+                            info=crear_bloqueI(bloqueNivel1,nombre_disco,ruta_disco,info);
+                            //bloqueNivel1.apuntador[0]=info.free_bloque;
+                            for (int var = 0; var < 6; ++var) {
+                                    if (tamArchivo<=24) {
+                                        char subbuff[tamArchivo + 1];
+                                        memcpy( subbuff, &contenido[lectorPos], tamArchivo);
+                                        subbuff[tamArchivo] = '\0';
+                                        BA bloqueContenido;
+                                        memset(&bloqueContenido.padre,0,sizeof(bloqueContenido.padre));
+                                        memset(&bloqueContenido.nombre,0,sizeof(bloqueContenido.nombre));
+                                        memset(&bloqueContenido.informacion,0,sizeof(bloqueContenido.informacion));
+                                        strcat(bloqueContenido.padre,"/");
+                                        strcat(bloqueContenido.nombre,nombre_archivo);
+                                        strcat(bloqueContenido.informacion,subbuff);
+                                        bloqueNivel1.apuntador[var]=info.free_bloque;
+                                        info=crear_bloqueA(bloqueContenido,nombre_disco,ruta_disco,info);
+                                        break;
+                                    } else {
+                                        char subbuff[25];
+                                        memcpy( subbuff, &contenido[lectorPos], 24);
+                                        subbuff[24] = '\0';
+                                        BA bloqueContenido;
+                                        memset(&bloqueContenido.padre,0,sizeof(bloqueContenido.padre));
+                                        memset(&bloqueContenido.nombre,0,sizeof(bloqueContenido.nombre));
+                                        memset(&bloqueContenido.informacion,0,sizeof(bloqueContenido.informacion));
+                                        strcat(bloqueContenido.padre,"/");
+                                        strcat(bloqueContenido.nombre,nombre_archivo);
+                                        strcat(bloqueContenido.informacion,subbuff);
+                                        bloqueNivel1.apuntador[var]=info.free_bloque;
+                                        info=crear_bloqueA(bloqueContenido,nombre_disco,ruta_disco,info);
+                                        lectorPos=lectorPos+24;
+                                    }
+                                tamArchivo=tamArchivo-24;
+                            }
+                        }
+                        //Actualizar BloqueNivel 1
+                        escritor = fopen(pathaux, "rb+");
+                        fseek(escritor,info.bloques+(sizeof(BI)*archivoNuevo.bloque_ind1),SEEK_SET);
+                        fwrite(&bloqueNivel1,sizeof(BI),1,escritor);
+                        fclose(escritor);
                 }
             crear_inodo(padre,nombre_disco,ruta_disco,info);
         }
@@ -689,7 +909,7 @@ void crear_archivo(char* nombre_disco,char* ruta_disco,char* path,char **pathE,c
     fwrite(&info,sizeof(SB),1,escritor);
     free(pathaux);
     fclose(escritor);
-    if (crear==1) {
+    if (crear==1 && tipoA==1) {
         char* descrip=(char*)malloc(140);
         memset(&descrip[0], 0, sizeof(descrip));
         strcat(descrip, "Se creo el archivo \"");
@@ -698,9 +918,11 @@ void crear_archivo(char* nombre_disco,char* ruta_disco,char* path,char **pathE,c
         strcat(descrip, path);
         bitacoraReporte(descrip,nombre_disco,ruta_disco);
         free(descrip);
-        printf(" Archivo creado correctamente!\n");
+        printf("   Archivo creado correctamente!\n");
     } else {
-        printf(" No se pudo crear el archivo!\n");
+        if(tipoA==1){
+        printf("   No se pudo crear el archivo!\n");
+        }
     }
 }
 
@@ -960,6 +1182,21 @@ void visor_archivo(char* nombre_disco,char* ruta_disco,char* path,char **pathE,c
                     printf("%s",temp.informacion);
                 }
             }
+            if (padre.bloque_ind1!=-1) {
+                escritor = fopen(pathaux, "rb+");
+                BI bloqueNivel1;
+                fseek(escritor,info.bloques+(sizeof(BI)*padre.bloque_ind1),SEEK_SET);
+                fread(&bloqueNivel1,sizeof(BI),1,escritor);
+                fclose(escritor);
+                for (int var = 0; var < 6; ++var) {
+                    if (bloqueNivel1.apuntador[var]!=-1) {
+                        BA temp;
+                        fseek(escritor,info.bloques+(bloqueNivel1.apuntador[var]*sizeof(BA)),SEEK_SET);
+                        fread(&temp,sizeof(BA),1,escritor);
+                        printf("%s",temp.informacion);
+                    }
+                }
+            }
         }
     } else {
         //En otros lados vergas
@@ -1014,6 +1251,21 @@ void visor_archivo(char* nombre_disco,char* ruta_disco,char* path,char **pathE,c
                     fseek(escritor,info.bloques+(padre.bloque_dir[var]*sizeof(BA)),SEEK_SET);
                     fread(&temp,sizeof(BA),1,escritor);
                     printf("%s",temp.informacion);
+                }
+            }
+            if (padre.bloque_ind1!=-1) {
+                escritor = fopen(pathaux, "rb+");
+                BI bloqueNivel1;
+                fseek(escritor,info.bloques+(sizeof(BI)*padre.bloque_ind1),SEEK_SET);
+                fread(&bloqueNivel1,sizeof(BI),1,escritor);
+                fclose(escritor);
+                for (int var = 0; var < 6; ++var) {
+                    if (bloqueNivel1.apuntador[var]!=-1) {
+                        BA temp;
+                        fseek(escritor,info.bloques+(bloqueNivel1.apuntador[var]*sizeof(BA)),SEEK_SET);
+                        fread(&temp,sizeof(BA),1,escritor);
+                        printf("%s",temp.informacion);
+                    }
                 }
             }
         }
@@ -1150,7 +1402,7 @@ void visor_carpeta(char* nombre_disco,char* ruta_disco,char* path,char **pathE){
     fclose(escritor);
 }
 
-void eliminar(char* nombre_disco,char* ruta_disco,char* path,char **pathE){
+void eliminar(char* nombre_disco,char* ruta_disco,char* path,char **pathE,int tipoA){
     int inoAr[48];
     int contino=-1;
     int bloAr[48];
@@ -1231,7 +1483,7 @@ void eliminar(char* nombre_disco,char* ruta_disco,char* path,char **pathE){
                         inoAr[contino]=bloqueCarpeta.hijo[0];
                         contblo++;
                         bloAr[contblo]=padreC.bloque_dir[var];
-                        eliminar(nombre_disco,ruta_disco,pathA,retorno);
+                        eliminar(nombre_disco,ruta_disco,pathA,retorno,tipoA);
                         /*escritor = fopen(pathaux, "rb+");
                         BM elim;
                         elim.estado='0';
@@ -1271,7 +1523,7 @@ void eliminar(char* nombre_disco,char* ruta_disco,char* path,char **pathE){
                             inoAr[contino]=bloqueCarpeta.hijo[0];
                             contblo++;
                             bloAr[contblo]=bloqueNivel1.apuntador[var];
-                            eliminar(nombre_disco,ruta_disco,pathA,retorno);
+                            eliminar(nombre_disco,ruta_disco,pathA,retorno,tipoA);
                             /*escritor = fopen(pathaux, "rb+");
                             BM elim;
                             elim.estado='0';
@@ -1286,16 +1538,37 @@ void eliminar(char* nombre_disco,char* ruta_disco,char* path,char **pathE){
                         }
                     }
                 }
-                printf("   Se elimino la carpeta %s\n",path);
-                strcat(descrip, "Se elimino la carpeta \"");
-                strcat(descrip, path);
-                strcat(descrip,"\"");
+                if (tipoA==1) {
+                    printf("   Se elimino la carpeta %s\n",path);
+                    strcat(descrip, "Se elimino la carpeta \"");
+                    strcat(descrip, path);
+                    strcat(descrip,"\"");
+                }
             }
             else{
-                printf("   Se elimino el archivo %s\n",path);
-                strcat(descrip, "Se elimino el archivo \"");
-                strcat(descrip, path);
-                strcat(descrip,"\"");
+                for (int var = 0; var < 4; ++var) {
+                    if (padreC.bloque_dir[var]!=-1) {
+                        info=eliminar_bloque(padreC.bloque_dir[var],nombre_disco,ruta_disco,info);
+                    }
+                }
+                if (padreC.bloque_ind1!=-1) {
+                    escritor = fopen(pathaux, "rb+");
+                    BI bloqueNivel1;
+                    fseek(escritor,info.bloques+(sizeof(BI)*padreC.bloque_ind1),SEEK_SET);
+                    fread(&bloqueNivel1,sizeof(BI),1,escritor);
+                    fclose(escritor);
+                    for (int var = 0; var < 6; ++var) {
+                        if (bloqueNivel1.apuntador[var]!=-1) {
+                            info=eliminar_bloque(bloqueNivel1.apuntador[var],nombre_disco,ruta_disco,info);
+                        }
+                    }
+                }
+                if (tipoA==1) {
+                    printf("   Se elimino el archivo %s\n",path);
+                    strcat(descrip, "Se elimino el archivo \"");
+                    strcat(descrip, path);
+                    strcat(descrip,"\"");
+                }
             }
             /*escritor = fopen(pathaux, "rb+");
             BM elim;
@@ -1334,12 +1607,14 @@ void eliminar(char* nombre_disco,char* ruta_disco,char* path,char **pathE){
     if (nInodo!=0) {
         info=eliminar_inodo(nInodo,nombre_disco,ruta_disco,info);
         info=eliminar_bloque(nBloque,nombre_disco,ruta_disco,info);
-        bitacoraReporte(descrip,nombre_disco,ruta_disco);
-        free(descrip);
-        printf(" Se elimino el contenido de la ruta! \n");
+        if (tipoA==1) {
+            bitacoraReporte(descrip,nombre_disco,ruta_disco);
+            free(descrip);
+            printf("   Se elimino el contenido de la ruta! \n");
+        }
     }
     else{
-        printf(" No se pudo eliminar el contenido de la ruta! \n");
+        printf("   No se pudo eliminar el contenido de la ruta! \n");
     }
     escritor = fopen(pathaux, "rb+");
     fseek(escritor,info.inodos,SEEK_SET);
@@ -1599,6 +1874,9 @@ void bitacoraReporte(char* descrip,char* nombre_disco,char* ruta_disco){
 }
 
 void modificar_archivo(char* nombre_disco,char* ruta_disco,char* path,char **pathE,char* nombre_archivo){
+    char* pathauxE=(char*)malloc(150);
+    memset(&pathauxE[0], 0, sizeof(pathauxE));
+    int nInodo=0;
     char* comando=(char*)malloc(150);
     char* pathaux=(char*)malloc(150);
     char* texto=(char*)malloc(1104);
@@ -1619,7 +1897,7 @@ void modificar_archivo(char* nombre_disco,char* ruta_disco,char* path,char **pat
     if (strcmp(path, "/") == 0) {
         //Declarar en la raiz
         //Revisar bloques directos
-        int nInodo=-1;
+        nInodo=-1;
         for (int var = 0; var < 4; ++var) {
             if (root.bloque_dir[var]!=-1) {
                 BC bloqueCarpeta;
@@ -1650,7 +1928,6 @@ void modificar_archivo(char* nombre_disco,char* ruta_disco,char* path,char **pat
     } else {
         //En otros lados vergas
         escritor = fopen(pathaux, "rb+");
-        int nInodo=0;
         int i;
         for(i=0;pathE[i]!=NULL;i++)
         {
@@ -1694,13 +1971,32 @@ void modificar_archivo(char* nombre_disco,char* ruta_disco,char* path,char **pat
             I padre;
             fseek(escritor,info.inodos+(nInodo*sizeof(I)),SEEK_SET);
             fread(&padre,sizeof(I),1,escritor);
-            for (int var = 0; var < 4; ++var) {
-                if (padre.bloque_dir[var]!=-1) {
-                    BA temp;
-                    fseek(escritor,info.bloques+(padre.bloque_dir[var]*sizeof(BA)),SEEK_SET);
-                    fread(&temp,sizeof(BA),1,escritor);
-                    //printf("%s",temp.informacion);
-                    strcat(texto, temp.informacion);
+            if (padre.tipo_dato==0) {
+                for (int var = 0; var < 4; ++var) {
+                    if (padre.bloque_dir[var]!=-1) {
+                        BA temp;
+                        fseek(escritor,info.bloques+(padre.bloque_dir[var]*sizeof(BA)),SEEK_SET);
+                        fread(&temp,sizeof(BA),1,escritor);
+                        //printf("%s",temp.informacion);
+                        strcat(texto, temp.informacion);
+                    }
+                }
+
+                if (padre.bloque_ind1!=-1) {
+                    escritor = fopen(pathaux, "rb+");
+                    BI bloqueNivel1;
+                    fseek(escritor,info.bloques+(sizeof(BI)*padre.bloque_ind1),SEEK_SET);
+                    fread(&bloqueNivel1,sizeof(BI),1,escritor);
+                    fclose(escritor);
+                    for (int var = 0; var < 6; ++var) {
+                        if (bloqueNivel1.apuntador[var]!=-1) {
+                            BA temp;
+                            fseek(escritor,info.bloques+(bloqueNivel1.apuntador[var]*sizeof(BA)),SEEK_SET);
+                            fread(&temp,sizeof(BA),1,escritor);
+                            //printf("%s",temp.informacion);
+                            strcat(texto, temp.informacion);
+                        }
+                    }
                 }
             }
         }
@@ -1743,10 +2039,36 @@ void modificar_archivo(char* nombre_disco,char* ruta_disco,char* path,char **pat
         }
         fclose(fp);
     }
-    printf("%s \n",texto);
-    free(source);
+    //printf("%s \n",source);
+
     //Eliminar archivo
     remove(nombre_archivo);
+
+    if(nInodo!=0){
+    //Eliminar archivo del disco
+    if (strcmp(path, "/") == 0) {
+        strcat(pathauxE, path);
+        strcat(pathauxE, nombre_archivo);
+    }
+    else{
+        strcat(pathauxE, path);
+        strcat(pathauxE, "/");
+        strcat(pathauxE, nombre_archivo);
+    }
+    //Split
+    char subbuff[strlen(pathauxE)];
+    memcpy( subbuff, &pathauxE[1], strlen(pathauxE)-1);
+    subbuff[strlen(pathauxE)-1] = '\0';
+            //int i;
+    char **retorno=split(subbuff, '/');
+    eliminar(nombre_disco,ruta_disco,pathauxE,retorno,0);
+    free(retorno);
+    //Recrear archivo
+    crear_archivo(nombre_disco,ruta_disco,path,pathE,source,nombre_archivo,0);
+    }
+
+    //Actualizar la informacion
+    free(source);
     escritor = fopen(pathaux, "rb+");
     fseek(escritor,info.inodos,SEEK_SET);
     fwrite(&root,sizeof(I),1,escritor);
@@ -1754,6 +2076,17 @@ void modificar_archivo(char* nombre_disco,char* ruta_disco,char* path,char **pat
     fwrite(&info,sizeof(SB),1,escritor);
     free(pathaux);
     fclose(escritor);
+    if (nInodo!=0) {
+        char* descrip=(char*)malloc(140);
+        memset(&descrip[0], 0, sizeof(descrip));
+        strcat(descrip, "Se creo actualizo el archivo \"");
+        strcat(descrip, nombre_archivo);
+        strcat(descrip, "\" en ");
+        strcat(descrip, path);
+        bitacoraReporte(descrip,nombre_disco,ruta_disco);
+        free(descrip);
+        printf(" Archivo actualizado correctamente!\n");
+    }
 }
 
 struct superbloque crear_inodo(I nuevo,char* nombre_disco,char* ruta_disco,SB info){
