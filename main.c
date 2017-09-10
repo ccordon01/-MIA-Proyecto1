@@ -199,7 +199,6 @@ void MenuPrincipal(){
                 char **retorno=split(subbuff, '/');
                 crear_carpeta(nombre_disco,rutaDisco,path,retorno,nombreC);
                 free(retorno);
-                printf(" Carpeta creada correctamente!\n");
                         /*for(i=0;retorno[i]!=NULL;i++)
                         {
                             printf("%s\n", retorno[i]);
@@ -323,7 +322,6 @@ void MenuPrincipal(){
                 crear_archivo(nombre_disco,rutaDisco,path,retorno,name,nombreC);
                 free(retorno);
                 free (name);
-                printf(" Archivo creado correctamente!\n");
                         /*for(i=0;retorno[i]!=NULL;i++)
                         {
                             printf("%s\n", retorno[i]);
@@ -358,8 +356,6 @@ void MenuPrincipal(){
                 char **retorno=split(subbuff, '/');
                 eliminar(nombre_disco,rutaDisco,path,retorno);
                 free(retorno);
-                printf(" \n");
-                printf(" \n");
                 printf(" \n");
                         /*for(i=0;retorno[i]!=NULL;i++)
                         {
@@ -404,8 +400,6 @@ void MenuPrincipal(){
                 mover(nombre_disco,rutaDisco,path,retorno,pathMove,retornoMove);
                 free(retorno);
                 free(retornoMove);
-                printf(" \n");
-                printf(" \n");
                 printf(" \n");
                         /*for(i=0;retorno[i]!=NULL;i++)
                         {

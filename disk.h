@@ -478,6 +478,7 @@ void bitacora(char* nombre_disco,char* ruta_disco){
 }
 
 void crear_archivo(char* nombre_disco,char* ruta_disco,char* path,char **pathE,char* contenido,char* nombre_archivo){
+    int crear=0;
     char* pathaux=(char*)malloc(150);
     memset(&pathaux[0], 0, sizeof(pathaux));
     strcat(pathaux, ruta_disco);
@@ -539,6 +540,7 @@ void crear_archivo(char* nombre_disco,char* ruta_disco,char* path,char **pathE,c
             //Crear bloque de carpeta
             //fclose(escritor);
             info=crear_bloqueC(bcnuevo,nombre_disco,ruta_disco,info);
+            crear=1;
             /*//Actualizar superbloque
             fseek(escritor, 0, SEEK_SET);
             fread(&info,sizeof(SB),1,escritor);*/
@@ -588,89 +590,98 @@ void crear_archivo(char* nombre_disco,char* ruta_disco,char* path,char **pathE,c
         escritor = fopen(pathaux, "rb+");
         int nInodo=0;
         int i;
+        int ic=0;
         for(i=0;pathE[i]!=NULL;i++)
         {
-            I tempIn;
-            fseek(escritor,info.inodos+(nInodo*sizeof(I)),SEEK_SET);
-            fread(&tempIn,sizeof(I),1,escritor);
-            //Revisar bloques directos
-            for (int var = 0; var < 4; ++var) {
-                if (tempIn.bloque_dir[var]!=-1) {
-                    BC bloqueCarpeta;
-                    fseek(escritor,info.bloques+(tempIn.bloque_dir[var]*sizeof(BC)),SEEK_SET);
-                    fread(&bloqueCarpeta,sizeof(BC),1,escritor);
-                    if (strcmp(pathE[i],bloqueCarpeta.nombre)==0) {
-                        nInodo=bloqueCarpeta.hijo[0];
-                        break;
+            if (!(ic==1 && nInodo==0)) {
+                ic++;
+                I tempIn;
+                fseek(escritor,info.inodos+(nInodo*sizeof(I)),SEEK_SET);
+                fread(&tempIn,sizeof(I),1,escritor);
+                //Revisar bloques directos
+                for (int var = 0; var < 4; ++var) {
+                    if (tempIn.bloque_dir[var]!=-1) {
+                        BC bloqueCarpeta;
+                        fseek(escritor,info.bloques+(tempIn.bloque_dir[var]*sizeof(BC)),SEEK_SET);
+                        fread(&bloqueCarpeta,sizeof(BC),1,escritor);
+                        if (strcmp(pathE[i],bloqueCarpeta.nombre)==0) {
+                            nInodo=bloqueCarpeta.hijo[0];
+                            break;
+                        }
                     }
                 }
+                //printf("%s\n", pathE[i]);
             }
-            //printf("%s\n", pathE[i]);
-            //free(pathE[i]);
+            free(pathE[i]);
         }
-        //free(pathE);
+        free(pathE);
+        if (nInodo!=0) {
 
-        I padre;
-        fseek(escritor,info.inodos+(nInodo*sizeof(I)),SEEK_SET);
-        fread(&padre,sizeof(I),1,escritor);
-        int ww = -1;
-        for (int var = 0; var < 4; ++var) {
-            if (padre.bloque_dir[var]==-1) {
-                ww = var;
-                break;
-            }
-        }
-        //Asignar en bloque directo
-        padre.bloque_dir[ww]=info.free_bloque;
-        //Crear bloque de carpeta
-        fclose(escritor);
-        info=crear_bloqueC(bcnuevo,nombre_disco,ruta_disco,info);
-        /*//Actualizar superbloque
-        fseek(escritor, 0, SEEK_SET);
-        fread(&info,sizeof(SB),1,escritor);*/
-        //escritor = fopen(pathaux, "rb+");
-        //Llenar conenido en bloques directos
-        int tamArchivo = archivoNuevo.tam;
-        int lectorPos=0;
-            //Bloques Directos
+            I padre;
+            fseek(escritor,info.inodos+(nInodo*sizeof(I)),SEEK_SET);
+            fread(&padre,sizeof(I),1,escritor);
+            int ww = -1;
             for (int var = 0; var < 4; ++var) {
-                    if (tamArchivo<=24) {
-                        char subbuff[tamArchivo + 1];
-                        memcpy( subbuff, &contenido[lectorPos], tamArchivo);
-                        subbuff[tamArchivo] = '\0';
-                        BA bloqueContenido;
-                        memset(&bloqueContenido.padre,0,sizeof(bloqueContenido.padre));
-                        memset(&bloqueContenido.nombre,0,sizeof(bloqueContenido.nombre));
-                        memset(&bloqueContenido.informacion,0,sizeof(bloqueContenido.informacion));
-                        strcat(bloqueContenido.padre,"/");
-                        strcat(bloqueContenido.nombre,nombre_archivo);
-                        strcat(bloqueContenido.informacion,subbuff);
-                        archivoNuevo.bloque_dir[var]=info.free_bloque;
-                        info=crear_bloqueA(bloqueContenido,nombre_disco,ruta_disco,info);
-                        break;
-                    } else {
-                        char subbuff[25];
-                        memcpy( subbuff, &contenido[lectorPos], 24);
-                        subbuff[24] = '\0';
-                        BA bloqueContenido;
-                        memset(&bloqueContenido.padre,0,sizeof(bloqueContenido.padre));
-                        memset(&bloqueContenido.nombre,0,sizeof(bloqueContenido.nombre));
-                        memset(&bloqueContenido.informacion,0,sizeof(bloqueContenido.informacion));
-                        strcat(bloqueContenido.padre,"/");
-                        strcat(bloqueContenido.nombre,nombre_archivo);
-                        strcat(bloqueContenido.informacion,subbuff);
-                        archivoNuevo.bloque_dir[var]=info.free_bloque;
-                        info=crear_bloqueA(bloqueContenido,nombre_disco,ruta_disco,info);
-                        lectorPos=lectorPos+24;
-                    }
-                tamArchivo=tamArchivo-24;
+                if (padre.bloque_dir[var]==-1) {
+                    ww = var;
+                    break;
+                }
             }
-            if (tamArchivo>0) {
-                //Bloques Indirectos
-            }
-        crear_inodo(padre,nombre_disco,ruta_disco,info);
+            //Asignar en bloque directo
+            padre.bloque_dir[ww]=info.free_bloque;
+            //Crear bloque de carpeta
+            fclose(escritor);
+            info=crear_bloqueC(bcnuevo,nombre_disco,ruta_disco,info);
+            crear=1;
+            /*//Actualizar superbloque
+            fseek(escritor, 0, SEEK_SET);
+            fread(&info,sizeof(SB),1,escritor);*/
+            //escritor = fopen(pathaux, "rb+");
+            //Llenar conenido en bloques directos
+            int tamArchivo = archivoNuevo.tam;
+            int lectorPos=0;
+                //Bloques Directos
+                for (int var = 0; var < 4; ++var) {
+                        if (tamArchivo<=24) {
+                            char subbuff[tamArchivo + 1];
+                            memcpy( subbuff, &contenido[lectorPos], tamArchivo);
+                            subbuff[tamArchivo] = '\0';
+                            BA bloqueContenido;
+                            memset(&bloqueContenido.padre,0,sizeof(bloqueContenido.padre));
+                            memset(&bloqueContenido.nombre,0,sizeof(bloqueContenido.nombre));
+                            memset(&bloqueContenido.informacion,0,sizeof(bloqueContenido.informacion));
+                            strcat(bloqueContenido.padre,"/");
+                            strcat(bloqueContenido.nombre,nombre_archivo);
+                            strcat(bloqueContenido.informacion,subbuff);
+                            archivoNuevo.bloque_dir[var]=info.free_bloque;
+                            info=crear_bloqueA(bloqueContenido,nombre_disco,ruta_disco,info);
+                            break;
+                        } else {
+                            char subbuff[25];
+                            memcpy( subbuff, &contenido[lectorPos], 24);
+                            subbuff[24] = '\0';
+                            BA bloqueContenido;
+                            memset(&bloqueContenido.padre,0,sizeof(bloqueContenido.padre));
+                            memset(&bloqueContenido.nombre,0,sizeof(bloqueContenido.nombre));
+                            memset(&bloqueContenido.informacion,0,sizeof(bloqueContenido.informacion));
+                            strcat(bloqueContenido.padre,"/");
+                            strcat(bloqueContenido.nombre,nombre_archivo);
+                            strcat(bloqueContenido.informacion,subbuff);
+                            archivoNuevo.bloque_dir[var]=info.free_bloque;
+                            info=crear_bloqueA(bloqueContenido,nombre_disco,ruta_disco,info);
+                            lectorPos=lectorPos+24;
+                        }
+                    tamArchivo=tamArchivo-24;
+                }
+                if (tamArchivo>0) {
+                    //Bloques Indirectos
+                }
+            crear_inodo(padre,nombre_disco,ruta_disco,info);
+        }
     }
-    crear_inodo(archivoNuevo,nombre_disco,ruta_disco,info);
+    if (crear==1) {
+        crear_inodo(archivoNuevo,nombre_disco,ruta_disco,info);
+    }
     escritor = fopen(pathaux, "rb+");
     fseek(escritor,info.inodos,SEEK_SET);
     fwrite(&root,sizeof(I),1,escritor);
@@ -678,17 +689,23 @@ void crear_archivo(char* nombre_disco,char* ruta_disco,char* path,char **pathE,c
     fwrite(&info,sizeof(SB),1,escritor);
     free(pathaux);
     fclose(escritor);
-    char* descrip=(char*)malloc(140);
-    memset(&descrip[0], 0, sizeof(descrip));
-    strcat(descrip, "Se creo el archivo \"");
-    strcat(descrip, nombre_archivo);
-    strcat(descrip, "\" en ");
-    strcat(descrip, path);
-    bitacoraReporte(descrip,nombre_disco,ruta_disco);
-    free(descrip);
+    if (crear==1) {
+        char* descrip=(char*)malloc(140);
+        memset(&descrip[0], 0, sizeof(descrip));
+        strcat(descrip, "Se creo el archivo \"");
+        strcat(descrip, nombre_archivo);
+        strcat(descrip, "\" en ");
+        strcat(descrip, path);
+        bitacoraReporte(descrip,nombre_disco,ruta_disco);
+        free(descrip);
+        printf(" Archivo creado correctamente!\n");
+    } else {
+        printf(" No se pudo crear el archivo!\n");
+    }
 }
 
 void crear_carpeta(char* nombre_disco,char* ruta_disco,char* path,char **pathE,char* nombre_archivo){
+    int crear=0;
     char* pathaux=(char*)malloc(150);
     memset(&pathaux[0], 0, sizeof(pathaux));
     strcat(pathaux, ruta_disco);
@@ -752,6 +769,7 @@ void crear_carpeta(char* nombre_disco,char* ruta_disco,char* path,char **pathE,c
                 info=crear_bloqueI(bloqueNivel1,nombre_disco,ruta_disco,info);
                 bloqueNivel1.apuntador[0]=info.free_bloque;
                 info=crear_bloqueC(bcnuevo,nombre_disco,ruta_disco,info);
+                crear=1;
                 ww=0;
             }
             else{
@@ -766,6 +784,7 @@ void crear_carpeta(char* nombre_disco,char* ruta_disco,char* path,char **pathE,c
                 bloqueNivel1.apuntador[ww]=info.free_bloque;
                 fclose(escritor);
                 info=crear_bloqueC(bcnuevo,nombre_disco,ruta_disco,info);
+                crear=1;
             }
             //Actualizar BloqueNivel 1
             escritor = fopen(pathaux, "rb+");
@@ -779,6 +798,7 @@ void crear_carpeta(char* nombre_disco,char* ruta_disco,char* path,char **pathE,c
             //Crear bloque de carpeta
             //fclose(escritor);
             info=crear_bloqueC(bcnuevo,nombre_disco,ruta_disco,info);
+            crear=1;
             /*//Actualizar superbloque
             fseek(escritor, 0, SEEK_SET);
             fread(&info,sizeof(SB),1,escritor);*/
@@ -788,82 +808,93 @@ void crear_carpeta(char* nombre_disco,char* ruta_disco,char* path,char **pathE,c
         escritor = fopen(pathaux, "rb+");
         int nInodo=0;
         int i;
+        int ic=0;
         for(i=0;pathE[i]!=NULL;i++)
         {
-            I tempIn;
-            fseek(escritor,info.inodos+(nInodo*sizeof(I)),SEEK_SET);
-            fread(&tempIn,sizeof(I),1,escritor);
-            //Revisar bloques directos
-            for (int var = 0; var < 4; ++var) {
-                if (tempIn.bloque_dir[var]!=-1) {
-                    BC bloqueCarpeta;
-                    fseek(escritor,info.bloques+(tempIn.bloque_dir[var]*sizeof(BC)),SEEK_SET);
-                    fread(&bloqueCarpeta,sizeof(BC),1,escritor);
-                    if (strcmp(pathE[i],bloqueCarpeta.nombre)==0) {
-                        nInodo=bloqueCarpeta.hijo[0];
-                        break;
-                    }
-                }
-            }
-            //printf("%s\n", pathE[i]);
-            free(pathE[i]);
-        }
-        free(pathE);
-
-        I padre;
-        fseek(escritor,info.inodos+(nInodo*sizeof(I)),SEEK_SET);
-        fread(&padre,sizeof(I),1,escritor);
-        int ww = -1;
-        for (int var = 0; var < 4; ++var) {
-            if (padre.bloque_dir[var]==-1) {
-                ww = var;
-                break;
-            }
-        }
-        if (padre.tipo_dato==1) {
-            if (ww==-1) {
-                //Bloques indirectos
-                //Nivel 1
-                BI bloqueNivel1;
-                if (padre.bloque_ind1==-1) {
-                    padre.bloque_ind1=info.free_bloque;
-                    bloqueNivel1.nivel=1;
-                    for (int var = 0; var < 6; ++var) {
-                        bloqueNivel1.apuntador[var]=-1;
-                    }
-                    info=crear_bloqueI(bloqueNivel1,nombre_disco,ruta_disco,info);
-                    bloqueNivel1.apuntador[0]=info.free_bloque;
-                    info=crear_bloqueC(bcnuevo,nombre_disco,ruta_disco,info);
-                    ww=0;
-                }
-                else{
-                    fseek(escritor,info.bloques+(sizeof(BI)*padre.bloque_ind1),SEEK_SET);
-                    fread(&bloqueNivel1,sizeof(BI),1,escritor);
-                    for (int var = 0; var < 6; ++var) {
-                        if (bloqueNivel1.apuntador[var]==-1) {
-                            ww = var;
+            if (!(ic==1 && nInodo==0)) {
+                ic++;
+                I tempIn;
+                fseek(escritor,info.inodos+(nInodo*sizeof(I)),SEEK_SET);
+                fread(&tempIn,sizeof(I),1,escritor);
+                //Revisar bloques directos
+                for (int var = 0; var < 4; ++var) {
+                    if (tempIn.bloque_dir[var]!=-1) {
+                        BC bloqueCarpeta;
+                        fseek(escritor,info.bloques+(tempIn.bloque_dir[var]*sizeof(BC)),SEEK_SET);
+                        fread(&bloqueCarpeta,sizeof(BC),1,escritor);
+                        if (strcmp(pathE[i],bloqueCarpeta.nombre)==0) {
+                            nInodo=bloqueCarpeta.hijo[0];
                             break;
                         }
                     }
-                    bloqueNivel1.apuntador[ww]=info.free_bloque;
-                    fclose(escritor);
-                    info=crear_bloqueC(bcnuevo,nombre_disco,ruta_disco,info);
                 }
-                //Actualizar BloqueNivel 1
-                escritor = fopen(pathaux, "rb+");
-                fseek(escritor,info.bloques+(sizeof(BI)*padre.bloque_ind1),SEEK_SET);
-                fwrite(&bloqueNivel1,sizeof(BI),1,escritor);
-                fclose(escritor);
+                //printf("%s\n", pathE[i]);
             }
-            else{
-            padre.bloque_dir[ww]=info.free_bloque;
-            fclose(escritor);
-            info=crear_bloqueC(bcnuevo,nombre_disco,ruta_disco,info);
-            }
-            crear_inodo(padre,nombre_disco,ruta_disco,info);
+            free(pathE[i]);
         }
+        free(pathE);
+        if (nInodo!=0) {
+            I padre;
+            fseek(escritor,info.inodos+(nInodo*sizeof(I)),SEEK_SET);
+            fread(&padre,sizeof(I),1,escritor);
+            int ww = -1;
+            for (int var = 0; var < 4; ++var) {
+                if (padre.bloque_dir[var]==-1) {
+                    ww = var;
+                    break;
+                }
+            }
+            if (padre.tipo_dato==1) {
+                if (ww==-1) {
+                    //Bloques indirectos
+                    //Nivel 1
+                    BI bloqueNivel1;
+                    if (padre.bloque_ind1==-1) {
+                        padre.bloque_ind1=info.free_bloque;
+                        bloqueNivel1.nivel=1;
+                        for (int var = 0; var < 6; ++var) {
+                            bloqueNivel1.apuntador[var]=-1;
+                        }
+                        info=crear_bloqueI(bloqueNivel1,nombre_disco,ruta_disco,info);
+                        bloqueNivel1.apuntador[0]=info.free_bloque;
+                        info=crear_bloqueC(bcnuevo,nombre_disco,ruta_disco,info);
+                        crear=1;
+                        ww=0;
+                    }
+                    else{
+                        fseek(escritor,info.bloques+(sizeof(BI)*padre.bloque_ind1),SEEK_SET);
+                        fread(&bloqueNivel1,sizeof(BI),1,escritor);
+                        for (int var = 0; var < 6; ++var) {
+                            if (bloqueNivel1.apuntador[var]==-1) {
+                                ww = var;
+                                break;
+                            }
+                        }
+                        bloqueNivel1.apuntador[ww]=info.free_bloque;
+                        fclose(escritor);
+                        info=crear_bloqueC(bcnuevo,nombre_disco,ruta_disco,info);
+                        crear=1;
+                    }
+                    //Actualizar BloqueNivel 1
+                    escritor = fopen(pathaux, "rb+");
+                    fseek(escritor,info.bloques+(sizeof(BI)*padre.bloque_ind1),SEEK_SET);
+                    fwrite(&bloqueNivel1,sizeof(BI),1,escritor);
+                    fclose(escritor);
+                }
+                else{
+                padre.bloque_dir[ww]=info.free_bloque;
+                fclose(escritor);
+                info=crear_bloqueC(bcnuevo,nombre_disco,ruta_disco,info);
+                crear=1;
+                }
+                crear_inodo(padre,nombre_disco,ruta_disco,info);
+            }
+
+        }
+       }
+    if (crear==1) {
+        crear_inodo(archivoNuevo,nombre_disco,ruta_disco,info);
     }
-    crear_inodo(archivoNuevo,nombre_disco,ruta_disco,info);
     escritor = fopen(pathaux, "rb+");
     fseek(escritor,info.inodos,SEEK_SET);
     fwrite(&root,sizeof(I),1,escritor);
@@ -871,14 +902,19 @@ void crear_carpeta(char* nombre_disco,char* ruta_disco,char* path,char **pathE,c
     fwrite(&info,sizeof(SB),1,escritor);
     free(pathaux);
     fclose(escritor);
-    char* descrip=(char*)malloc(140);
-    memset(&descrip[0], 0, sizeof(descrip));
-    strcat(descrip, "Se creo la carpeta \"");
-    strcat(descrip, nombre_archivo);
-    strcat(descrip, "\" en ");
-    strcat(descrip, path);
-    bitacoraReporte(descrip,nombre_disco,ruta_disco);
-    free(descrip);
+    if (crear==1) {
+        char* descrip=(char*)malloc(140);
+        memset(&descrip[0], 0, sizeof(descrip));
+        strcat(descrip, "Se creo la carpeta \"");
+        strcat(descrip, nombre_archivo);
+        strcat(descrip, "\" en ");
+        strcat(descrip, path);
+        bitacoraReporte(descrip,nombre_disco,ruta_disco);
+        free(descrip);
+        printf(" Carpeta creada correctamente!\n");
+    } else {
+        printf(" No se pudo crear carpeta!\n");
+    }
 }
 
 void visor_archivo(char* nombre_disco,char* ruta_disco,char* path,char **pathE,char* nombre_archivo){
@@ -1295,9 +1331,17 @@ void eliminar(char* nombre_disco,char* ruta_disco,char* path,char **pathE){
             break;
         }
     }*/
+    if (nInodo!=0) {
+        info=eliminar_inodo(nInodo,nombre_disco,ruta_disco,info);
+        info=eliminar_bloque(nBloque,nombre_disco,ruta_disco,info);
+        bitacoraReporte(descrip,nombre_disco,ruta_disco);
+        free(descrip);
+        printf(" Se elimino el contenido de la ruta! \n");
+    }
+    else{
+        printf(" No se pudo eliminar el contenido de la ruta! \n");
+    }
     escritor = fopen(pathaux, "rb+");
-    info=eliminar_inodo(nInodo,nombre_disco,ruta_disco,info);
-    info=eliminar_bloque(nBloque,nombre_disco,ruta_disco,info);
     fseek(escritor,info.inodos,SEEK_SET);
     fwrite(&root,sizeof(I),1,escritor);
     fseek(escritor,info.inodos+(auxn*sizeof(I)),SEEK_SET);
@@ -1306,8 +1350,6 @@ void eliminar(char* nombre_disco,char* ruta_disco,char* path,char **pathE){
     fwrite(&info,sizeof(SB),1,escritor);
     free(pathaux);
     fclose(escritor);
-    bitacoraReporte(descrip,nombre_disco,ruta_disco);
-    free(descrip);
 }
 
 void mover(char* nombre_disco,char* ruta_disco,char* path,char **pathE,char* pathM,char **pathEM){
@@ -1334,9 +1376,11 @@ void mover(char* nombre_disco,char* ruta_disco,char* path,char **pathE,char* pat
     int auxn;
     int nInodo=0;
     int nBloque=0;
+    int nInodoDestino=0;
+    //int nBloqueDestino=0;
     if (strcmp(path, "/") == 0) {
         //Declarar en la raiz
-        printf(" No se puede eliminar el directorio \n");
+        printf(" No se puede mover el directorio \n");
     } else {
         //En otros lados vergas
         //escritor = fopen(pathaux, "rb+");
@@ -1366,105 +1410,140 @@ void mover(char* nombre_disco,char* ruta_disco,char* path,char **pathE,char* pat
         }
         //free(pathE);
         if (nInodo!=0) {
-            I padreC;
-            fseek(escritor,info.inodos+(nInodo*sizeof(I)),SEEK_SET);
-            fread(&padreC,sizeof(I),1,escritor);
-            fclose(escritor);
-            if (padreC.tipo_dato==1) {
+            if (strcmp(pathM, "/") == 0) {
+                //Declarar en la raiz
+                int ww = -1;
                 for (int var = 0; var < 4; ++var) {
-                    if (padreC.bloque_dir[var]!=-1) {
-                        escritor = fopen(pathaux, "rb+");
-                        BC bloqueCarpeta;
-                        fseek(escritor,info.bloques+(padreC.bloque_dir[var]*sizeof(BC)),SEEK_SET);
-                        fread(&bloqueCarpeta,sizeof(BC),1,escritor);
-                        char pathA[100];
-                        memset(&pathA,0,sizeof(pathA));
-                        strcat(pathA,path);
-                        strcat(pathA,"/");
-                        strcat(pathA,bloqueCarpeta.nombre);
-                        char subbuff[strlen(path)];
-                        memcpy( subbuff, &pathA[1], strlen(pathA)-1);
-                        subbuff[strlen(pathA)-1] = '\0';
-                        char **retorno=split(subbuff, '/');
-                        fclose(escritor);
-                        contino++;
-                        inoAr[contino]=bloqueCarpeta.hijo[0];
-                        contblo++;
-                        bloAr[contblo]=padreC.bloque_dir[var];
-                        eliminar(nombre_disco,ruta_disco,pathA,retorno);
-                        /*escritor = fopen(pathaux, "rb+");
-                        BM elim;
-                        elim.estado='0';
-                        fseek(escritor, info.bitmap_inodos+(sizeof(BM)*bloqueCarpeta.hijo[0]), SEEK_SET);
-                        fwrite(&elim,sizeof(BM),1,escritor);
-                        fseek(escritor, info.bitmap_bloques+(sizeof(BM)*padreC.bloque_dir[var]), SEEK_SET);
-                        fwrite(&elim,sizeof(BM),1,escritor);
-                        fclose(escritor);
-                        info=eliminar_inodo(bloqueCarpeta.hijo[0],nombre_disco,ruta_disco,info);
-                        info=eliminar_bloque(padreC.bloque_dir[var],nombre_disco,ruta_disco,info);*/
-                        free(retorno);
+                    if (root.bloque_dir[var]==-1) {
+                        ww = var;
+                        break;
                     }
                 }
-                if (padreC.bloque_ind1!=-1) {
-                    escritor = fopen(pathaux, "rb+");
+                if (ww==-1) {
+                    //Bloques indirectos
+                    //Nivel 1
                     BI bloqueNivel1;
-                    fseek(escritor,info.bloques+(sizeof(BI)*padreC.bloque_ind1),SEEK_SET);
-                    fread(&bloqueNivel1,sizeof(BI),1,escritor);
+                    if (root.bloque_ind1==-1) {
+                        root.bloque_ind1=info.free_bloque;
+                        bloqueNivel1.nivel=1;
+                        for (int var = 0; var < 6; ++var) {
+                            bloqueNivel1.apuntador[var]=-1;
+                        }
+                        info=crear_bloqueI(bloqueNivel1,nombre_disco,ruta_disco,info);
+                        bloqueNivel1.apuntador[0]=nBloque;
+                    }
+                    else{
+                        fseek(escritor,info.bloques+(sizeof(BI)*root.bloque_ind1),SEEK_SET);
+                        fread(&bloqueNivel1,sizeof(BI),1,escritor);
+                        for (int var = 0; var < 6; ++var) {
+                            if (bloqueNivel1.apuntador[var]==-1) {
+                                ww = var;
+                                break;
+                            }
+                        }
+                        bloqueNivel1.apuntador[ww]=nBloque;
+                    }
+                    //Actualizar BloqueNivel 1
+                    escritor = fopen(pathaux, "rb+");
+                    fseek(escritor,info.bloques+(sizeof(BI)*root.bloque_ind1),SEEK_SET);
+                    fwrite(&bloqueNivel1,sizeof(BI),1,escritor);
                     fclose(escritor);
-                    for (int var = 0; var < 6; ++var) {
-                        if (bloqueNivel1.apuntador[var]!=-1) {
-                            escritor = fopen(pathaux, "rb+");
-                            BC bloqueCarpeta;
-                            fseek(escritor,info.bloques+(bloqueNivel1.apuntador[var]*sizeof(BC)),SEEK_SET);
-                            fread(&bloqueCarpeta,sizeof(BC),1,escritor);
-                            char pathA[100];
-                            memset(&pathA,0,sizeof(pathA));
-                            strcat(pathA,path);
-                            strcat(pathA,"/");
-                            strcat(pathA,bloqueCarpeta.nombre);
-                            char subbuff[strlen(path)];
-                            memcpy( subbuff, &pathA[1], strlen(pathA)-1);
-                            subbuff[strlen(pathA)-1] = '\0';
-                            char **retorno=split(subbuff, '/');
-                            fclose(escritor);
-                            contino++;
-                            inoAr[contino]=bloqueCarpeta.hijo[0];
-                            contblo++;
-                            bloAr[contblo]=bloqueNivel1.apuntador[var];
-                            eliminar(nombre_disco,ruta_disco,pathA,retorno);
-                            /*escritor = fopen(pathaux, "rb+");
-                            BM elim;
-                            elim.estado='0';
-                            fseek(escritor, info.bitmap_inodos+(sizeof(BM)*bloqueCarpeta.hijo[0]), SEEK_SET);
-                            fwrite(&elim,sizeof(BM),1,escritor);
-                            fseek(escritor, info.bitmap_bloques+(sizeof(BM)*bloqueNivel1.apuntador[var]), SEEK_SET);
-                            fwrite(&elim,sizeof(BM),1,escritor);
-                            fclose(escritor);
-                            info=eliminar_inodo(bloqueCarpeta.hijo[0],nombre_disco,ruta_disco,info);
-                            info=eliminar_bloque(bloqueNivel1.apuntador[var],nombre_disco,ruta_disco,info);*/
-                            free(retorno);
+                }
+                else {
+                    //Asignar en bloque directo
+                    root.bloque_dir[ww]=nBloque;
+                }
+            } else {
+                //En otros lados vergas
+                escritor = fopen(pathaux, "rb+");
+                int i;
+                int ic=0;
+                for(i=0;pathEM[i]!=NULL;i++)
+                {
+                    if (!(ic==1 && nInodoDestino==0)) {
+                        ic++;
+                        I tempIn;
+                        fseek(escritor,info.inodos+(nInodoDestino*sizeof(I)),SEEK_SET);
+                        fread(&tempIn,sizeof(I),1,escritor);
+                        //Revisar bloques directos
+                        for (int var = 0; var < 4; ++var) {
+                            if (tempIn.bloque_dir[var]!=-1) {
+                                BC bloqueCarpeta;
+                                fseek(escritor,info.bloques+(tempIn.bloque_dir[var]*sizeof(BC)),SEEK_SET);
+                                fread(&bloqueCarpeta,sizeof(BC),1,escritor);
+                                if (strcmp(pathEM[i],bloqueCarpeta.nombre)==0) {
+                                    nInodoDestino=bloqueCarpeta.hijo[0];
+                                    break;
+                                }
+                            }
+                        }
+                        //printf("%s\n", pathE[i]);
+                    }
+                    free(pathEM[i]);
+                }
+                free(pathEM);
+                if (nInodoDestino!=0) {
+                    I padre;
+                    fseek(escritor,info.inodos+(nInodoDestino*sizeof(I)),SEEK_SET);
+                    fread(&padre,sizeof(I),1,escritor);
+                    int ww = -1;
+                    for (int var = 0; var < 4; ++var) {
+                        if (padre.bloque_dir[var]==-1) {
+                            ww = var;
+                            break;
                         }
                     }
+                    if (padre.tipo_dato==1) {
+                        if (ww==-1) {
+                            //Bloques indirectos
+                            //Nivel 1
+                            BI bloqueNivel1;
+                            if (padre.bloque_ind1==-1) {
+                                padre.bloque_ind1=info.free_bloque;
+                                bloqueNivel1.nivel=1;
+                                for (int var = 0; var < 6; ++var) {
+                                    bloqueNivel1.apuntador[var]=-1;
+                                }
+                                info=crear_bloqueI(bloqueNivel1,nombre_disco,ruta_disco,info);
+                                bloqueNivel1.apuntador[0]=nBloque;
+                            }
+                            else{
+                                fseek(escritor,info.bloques+(sizeof(BI)*padre.bloque_ind1),SEEK_SET);
+                                fread(&bloqueNivel1,sizeof(BI),1,escritor);
+                                for (int var = 0; var < 6; ++var) {
+                                    if (bloqueNivel1.apuntador[var]==-1) {
+                                        ww = var;
+                                        break;
+                                    }
+                                }
+                                bloqueNivel1.apuntador[ww]=nBloque;
+                                fclose(escritor);
+                            }
+                            //Actualizar BloqueNivel 1
+                            escritor = fopen(pathaux, "rb+");
+                            fseek(escritor,info.bloques+(sizeof(BI)*padre.bloque_ind1),SEEK_SET);
+                            fwrite(&bloqueNivel1,sizeof(BI),1,escritor);
+                            fclose(escritor);
+                        }
+                        else{
+                        padre.bloque_dir[ww]=nBloque;
+                        fclose(escritor);
+                        }
+                        crear_inodo(padre,nombre_disco,ruta_disco,info);
+                    }
+
                 }
-                printf("   Se elimino la carpeta %s\n",path);
-                strcat(descrip, "Se elimino la carpeta \"");
-                strcat(descrip, path);
-                strcat(descrip,"\"");
+                else{
+                    nInodoDestino=-1;
+                }
             }
-            else{
-                printf("   Se elimino el archivo %s\n",path);
-                strcat(descrip, "Se elimino el archivo \"");
-                strcat(descrip, path);
-                strcat(descrip,"\"");
-            }
+
         }
         else{
         close(escritor);
         }
     }
     escritor = fopen(pathaux, "rb+");
-    info=eliminar_inodo(nInodo,nombre_disco,ruta_disco,info);
-    info=eliminar_bloque(nBloque,nombre_disco,ruta_disco,info);
     fseek(escritor,info.inodos,SEEK_SET);
     fwrite(&root,sizeof(I),1,escritor);
     fseek(escritor,info.inodos+(auxn*sizeof(I)),SEEK_SET);
@@ -1473,8 +1552,18 @@ void mover(char* nombre_disco,char* ruta_disco,char* path,char **pathE,char* pat
     fwrite(&info,sizeof(SB),1,escritor);
     free(pathaux);
     fclose(escritor);
-    bitacoraReporte(descrip,nombre_disco,ruta_disco);
-    free(descrip);
+    if (nInodo!=0 && nInodoDestino!=-1) {
+        strcat(descrip, "Se movio \"");
+        strcat(descrip, path);
+        strcat(descrip, "\" en \"");
+        strcat(descrip, pathM);
+        strcat(descrip, "\"");
+        bitacoraReporte(descrip,nombre_disco,ruta_disco);
+        printf(" %s! \n",descrip);
+        free(descrip);
+    } else {
+        printf(" No se pudo realizar la accion! \n");
+    }
 }
 
 void bitacoraReporte(char* descrip,char* nombre_disco,char* ruta_disco){

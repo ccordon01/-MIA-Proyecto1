@@ -22,6 +22,7 @@ int len_palabra(char *cadena, int inicio, char separador)
 char **split(char *cadena, char separador)
 {
     int num_palabras=1, len_cadena=strlen(cadena), i, j=1, *inicios;
+    char **retorno;
     for(i=0;i<len_cadena;i++)
     {
         if(cadena[i]==separador)
@@ -40,7 +41,8 @@ char **split(char *cadena, char separador)
             j++;
         }
     }
-    char **retorno=malloc(sizeof(char *)*num_palabras+1);
+    free(retorno);
+    retorno=malloc(sizeof(char *)*num_palabras+1);
     retorno[num_palabras]=NULL;
     for(i=0;i<num_palabras;i++)
     {
