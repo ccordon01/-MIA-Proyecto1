@@ -302,6 +302,8 @@ void MenuPrincipal(){
             memset(&path,0,sizeof(path));
             memset(&cont,0,sizeof(cont));
             char *name = malloc (MAX_NAME_SZ);
+            char* comando=(char*)malloc(150);
+            memset(&comando[0], 0, sizeof(comando));
             if (isEmpty(rutaDisco,"")) {
                 printf(" ============================================================================= \n");
                 printf("                              Crear Archivo \n");
@@ -312,20 +314,65 @@ void MenuPrincipal(){
                 fflush(stdin);
                 scanf("%s", &path);
                 printf(" Ingrese el contenido del archivo: ");
-                fgets (name, MAX_NAME_SZ, stdin);
+                fflush(stdin);
+                //Leer entrada con gets
+                /*fgets (name, MAX_NAME_SZ, stdin);
                 fflush(stdin);
                 fgets (name, MAX_NAME_SZ, stdin);
                 if ((strlen(name)>0) && (name[strlen (name) - 1] == '\n'))
-                        name[strlen (name) - 1] = '\0';
+                        name[strlen (name) - 1] = '\0';*/
+
+                //Leer entrada con nano
+                FILE *fp = NULL;
+                fp = fopen(nombreC,"a");
+                fclose(fp);
+                fflush(fp);
+                //Mostrar archivo con nano
+                strcat(comando,"nano ");
+                strcat(comando,nombreC);
+                system(comando);
+                free(comando);
+                //Leer buffer
+                char *source = NULL;
+                fp = fopen(nombreC, "r");
+                if (fp != NULL) {
+                    /* Go to the end of the file. */
+                    if (fseek(fp, 0L, SEEK_END) == 0) {
+                        /* Get the size of the file. */
+                        long bufsize = ftell(fp);
+                        if (bufsize == -1) { /* Error */ }
+
+                        /* Allocate our buffer to that size. */
+                        source = malloc(sizeof(char) * (bufsize + 1));
+
+                        /* Go back to the start of the file. */
+                        if (fseek(fp, 0L, SEEK_SET) != 0) { /* Error */ }
+
+                        /* Read the entire file into memory. */
+                        size_t newLen = fread(source, sizeof(char), bufsize, fp);
+                        if ( ferror( fp ) != 0 ) {
+                            fputs("Error reading file", stderr);
+                        } else {
+                            source[newLen++] = '\0'; /* Just to be safe. */
+                        }
+                    }
+                    fclose(fp);
+                }
+                //printf("%s \n",source);
+
+                //Eliminar archivo
+                remove(nombreC);
+
                 //scanf("%s", &cont);
                 char subbuff[strlen(path)];
                 memcpy( subbuff, &path[1], strlen(path)-1);
                 subbuff[strlen(path)-1] = '\0';
                         //int i;
                 char **retorno=split(subbuff, '/');
-                crear_archivo(nombre_disco,rutaDisco,path,retorno,name,nombreC,1);
+                crear_archivo(nombre_disco,rutaDisco,path,retorno,source,nombreC,1);
                 free(retorno);
                 free (name);
+                free(source);
                         /*for(i=0;retorno[i]!=NULL;i++)
                         {
                             printf("%s\n", retorno[i]);
