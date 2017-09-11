@@ -54,7 +54,7 @@ void MenuPrincipal(){
     fflush(stdin);
     int opcion = 0;
     int carne,tamano_disco = 0;
-    while (opcion != 13){
+    while (opcion != 17){
         fflush(stdin);
         printf(" ============================================================================= \n");
         printf("                                Menu principal \n");
@@ -71,7 +71,8 @@ void MenuPrincipal(){
         printf(" 10. Eliminar Archivo o Carpeta \n");
         printf(" 11. Mover Archivo o Carpeta \n");
         printf(" 12. Modificar Archivo \n");
-        printf(" 13. Salir \n");
+        printf(" 16. Reporte Directorios \n");
+        printf(" 17. Salir \n");
         printf(" -----------------------------------------------------------------------------\n");
         printf("Ingrese una opcion: ");
         scanf("%d", &opcion);
@@ -240,8 +241,6 @@ void MenuPrincipal(){
                 char **retorno=split(subbuff, '/');
                 visor_archivo(nombre_disco,rutaDisco,path,retorno,nombreC);
                 free(retorno);
-                printf(" \n");
-                printf(" \n");
                 printf(" \n");
                         /*for(i=0;retorno[i]!=NULL;i++)
                         {
@@ -504,6 +503,23 @@ void MenuPrincipal(){
             /*printf(" Ingrese la cantidad de bloques: ");
             scanf("%d", &bloques);*/
             //ingresar_bloques(nombre_disco, bloques,rutaDisco);
+            break;
+
+        case 16:
+            fflush(stdin);
+            // Mostrar el disco
+            system("clear");
+            if (!isEmpty(rutaDisco,"")) {
+                perror(" No existe ningun disco montando!\n");
+            }else{
+                printf(" ============================================================================= \n");
+                printf("                              Reporte Directorios \n");
+                printf(" ============================================================================= \n\n");
+                //reporte1(nombre_disco,rutaDisco);
+                char **ret;
+                printf("node [shape=record];\n0 [label=\"/\"];\n");
+                recorrido_carpeta(nombre_disco,rutaDisco,"/",ret,0);
+            }
             break;
         }
     }

@@ -1220,9 +1220,9 @@ void visor_archivo(char* nombre_disco,char* ruta_disco,char* path,char **pathE,c
                 }
             }
             //printf("%s\n", pathE[i]);
-            //free(pathE[i]);
+            free(pathE[i]);
         }
-        //free(pathE);
+        free(pathE);
 
         I padreC;
         fseek(escritor,info.inodos+(nInodo*sizeof(I)),SEEK_SET);
@@ -1258,7 +1258,7 @@ void visor_archivo(char* nombre_disco,char* ruta_disco,char* path,char **pathE,c
                 BI bloqueNivel1;
                 fseek(escritor,info.bloques+(sizeof(BI)*padre.bloque_ind1),SEEK_SET);
                 fread(&bloqueNivel1,sizeof(BI),1,escritor);
-                fclose(escritor);
+                //fclose(escritor);
                 for (int var = 0; var < 6; ++var) {
                     if (bloqueNivel1.apuntador[var]!=-1) {
                         BA temp;
@@ -2339,6 +2339,169 @@ int next_bloque(char* nombre_disco,char* ruta_disco){
         }
     }
     return 0;
+    fclose(escritor);
+}
+
+void recorrido_carpeta(char* nombre_disco,char* ruta_disco,char* path,char **pathE,int pad){
+    char* pathaux=(char*)malloc(150);
+    memset(&pathaux[0], 0, sizeof(pathaux));
+    strcat(pathaux, ruta_disco);
+    strcat(pathaux, "/");
+    strcat(pathaux, nombre_disco);
+    strcat(pathaux, ".dsk");
+    FILE* escritor = fopen(pathaux, "rb+");
+    SB info;
+    fseek(escritor, 0, SEEK_SET);
+    fread(&info,sizeof(SB),1,escritor);
+    I root;
+    fseek(escritor,info.inodos,SEEK_SET);
+    fread(&root,sizeof(I),1,escritor);
+    fclose(escritor);
+    if (strcmp(path, "/") == 0) {
+        //Declarar en la raiz
+        //Revisar bloques directos
+        for (int var = 0; var < 4; ++var) {
+            if (root.bloque_dir[var]!=-1) {
+                escritor = fopen(pathaux, "rb+");
+                BC bloqueCarpeta;
+                fseek(escritor,info.bloques+(root.bloque_dir[var]*sizeof(BC)),SEEK_SET);
+                fread(&bloqueCarpeta,sizeof(BC),1,escritor);
+                I padre;
+                fseek(escritor,info.inodos+(bloqueCarpeta.hijo[0]*sizeof(I)),SEEK_SET);
+                fread(&padre,sizeof(I),1,escritor);
+                if (padre.tipo_dato==1) {
+                    printf("%d [label=\"%s\"]; \n",bloqueCarpeta.hijo[0],bloqueCarpeta.nombre);
+                    printf("%d -> %d; \n",pad,bloqueCarpeta.hijo[0]);
+                }
+                fclose(escritor);
+                if (padre.tipo_dato==1) {
+                    char **retorno=split(bloqueCarpeta.nombre, '/');
+                    recorrido_carpeta(nombre_disco,ruta_disco,bloqueCarpeta.nombre,retorno,bloqueCarpeta.hijo[0]);
+                    free(retorno);
+                }
+            }
+        }
+        if (root.bloque_ind1!=-1) {
+            escritor = fopen(pathaux, "rb+");
+            BI bloqueNivel1;
+            fseek(escritor,info.bloques+(sizeof(BI)*root.bloque_ind1),SEEK_SET);
+            fread(&bloqueNivel1,sizeof(BI),1,escritor);
+            fclose(escritor);
+            for (int var = 0; var < 6; ++var) {
+                if (bloqueNivel1.apuntador[var]!=-1) {
+                    escritor = fopen(pathaux, "rb+");
+                    BC bloqueCarpeta;
+                    fseek(escritor,info.bloques+(bloqueNivel1.apuntador[var]*sizeof(BC)),SEEK_SET);
+                    fread(&bloqueCarpeta,sizeof(BC),1,escritor);
+                    I padre;
+                    fseek(escritor,info.inodos+(bloqueCarpeta.hijo[0]*sizeof(I)),SEEK_SET);
+                    fread(&padre,sizeof(I),1,escritor);
+                    if (padre.tipo_dato==1) {
+                        printf("%d [label=\"%s\"]; \n",bloqueCarpeta.hijo[0],bloqueCarpeta.nombre);
+                        printf("%d -> %d; \n",pad,bloqueCarpeta.hijo[0]);
+                    }
+                    fclose(escritor);
+                    if (padre.tipo_dato==1) {
+                        char **retorno=split(bloqueCarpeta.nombre, '/');
+                        recorrido_carpeta(nombre_disco,ruta_disco,bloqueCarpeta.nombre,retorno,bloqueCarpeta.hijo[0]);
+                        free(retorno);
+                    }
+                }
+            }
+        }
+    } else {
+        //En otros lados vergas
+        escritor = fopen(pathaux, "rb+");
+        int nInodo=0;
+        int i;
+        for(i=0;pathE[i]!=NULL;i++)
+        {
+            I tempIn;
+            fseek(escritor,info.inodos+(nInodo*sizeof(I)),SEEK_SET);
+            fread(&tempIn,sizeof(I),1,escritor);
+            //Revisar bloques directos
+            for (int var = 0; var < 4; ++var) {
+                if (tempIn.bloque_dir[var]!=-1) {
+                    BC bloqueCarpeta;
+                    fseek(escritor,info.bloques+(tempIn.bloque_dir[var]*sizeof(BC)),SEEK_SET);
+                    fread(&bloqueCarpeta,sizeof(BC),1,escritor);
+                    if (strcmp(pathE[i],bloqueCarpeta.nombre)==0) {
+                        nInodo=bloqueCarpeta.hijo[0];
+                    }
+                }
+            }
+            //printf("%s\n", pathE[i]);
+            //free(pathE[i]);
+        }
+        //free(pathE);
+
+        I padreC;
+        fseek(escritor,info.inodos+(nInodo*sizeof(I)),SEEK_SET);
+        fread(&padreC,sizeof(I),1,escritor);
+        if (padreC.tipo_dato==1) {
+            for (int var = 0; var < 4; ++var) {
+                if (padreC.bloque_dir[var]!=-1) {
+                    escritor = fopen(pathaux, "rb+");
+                    BC bloqueCarpeta;
+                    fseek(escritor,info.bloques+(padreC.bloque_dir[var]*sizeof(BC)),SEEK_SET);
+                    fread(&bloqueCarpeta,sizeof(BC),1,escritor);
+                    I padre;
+                    fseek(escritor,info.inodos+(bloqueCarpeta.hijo[0]*sizeof(I)),SEEK_SET);
+                    fread(&padre,sizeof(I),1,escritor);if (padre.tipo_dato==1) {
+                        printf("%d [label=\"%s\"]; \n",bloqueCarpeta.hijo[0],bloqueCarpeta.nombre);
+                        printf("%d -> %d; \n",pad,bloqueCarpeta.hijo[0]);
+                    }
+                    fclose(escritor);
+                    if (padre.tipo_dato==1) {
+                        char *auxP = path;
+                        strcat(auxP,"/");
+                        strcat(auxP,bloqueCarpeta.nombre);
+                        char **retorno=split(auxP, '/');
+                        recorrido_carpeta(nombre_disco,ruta_disco,auxP,retorno,bloqueCarpeta.hijo[0]);
+                        free(retorno);
+                    }
+                }
+            }
+            if (padreC.bloque_ind1!=-1) {
+                escritor = fopen(pathaux, "rb+");
+                BI bloqueNivel1;
+                fseek(escritor,info.bloques+(sizeof(BI)*padreC.bloque_ind1),SEEK_SET);
+                fread(&bloqueNivel1,sizeof(BI),1,escritor);
+                for (int var = 0; var < 6; ++var) {
+                    if (bloqueNivel1.apuntador[var]!=-1) {
+                        escritor = fopen(pathaux, "rb+");
+                        BC bloqueCarpeta;
+                        fseek(escritor,info.bloques+(bloqueNivel1.apuntador[var]*sizeof(BC)),SEEK_SET);
+                        fread(&bloqueCarpeta,sizeof(BC),1,escritor);
+                        I padre;
+                        fseek(escritor,info.inodos+(bloqueCarpeta.hijo[0]*sizeof(I)),SEEK_SET);
+                        fread(&padre,sizeof(I),1,escritor);
+                        fread(&padre,sizeof(I),1,escritor);if (padre.tipo_dato==1) {
+                            printf("%d [label=\"%s\"]; \n",bloqueCarpeta.hijo[0],bloqueCarpeta.nombre);
+                            printf("%d -> %d; \n",pad,bloqueCarpeta.hijo[0]);
+                        }
+                        fclose(escritor);
+                        if (padre.tipo_dato==1) {
+                            char *auxP = path;
+                            strcat(auxP,"/");
+                            strcat(auxP,bloqueCarpeta.nombre);
+                            char **retorno=split(auxP, '/');
+                            recorrido_carpeta(nombre_disco,ruta_disco,auxP,retorno,bloqueCarpeta.hijo[0]);
+                            free(retorno);
+                        }
+                    }
+                }
+            }
+
+        }
+        //fclose(escritor);
+    }
+    escritor = fopen(pathaux, "rb+");
+    fseek(escritor,info.inodos,SEEK_SET);
+    fwrite(&root,sizeof(I),1,escritor);
+    fseek(escritor, 0, SEEK_SET);
+    fwrite(&info,sizeof(SB),1,escritor);
+    free(pathaux);
     fclose(escritor);
 }
 
